@@ -19,12 +19,10 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace sound {
 
     // Structs ----------------------------------------------------------------
-    struct Sound;
-    typedef struct Sound {
+    typedef struct {
         std::string filename;
         ALLEGRO_SAMPLE *sample;
         bool loaded;
@@ -85,6 +83,9 @@ namespace Game { namespace api { namespace sound {
                 debugArgs("api::sound", "Re-use sample instance for '%s'", sound->filename.data());
                 sampleInstance = instance;
                 al_set_sample(sampleInstance, sound->sample);
+                al_set_sample_instance_gain(sampleInstance, 1.0f);
+                al_set_sample_instance_pan(instance, 0.0f);
+                al_set_sample_instance_speed(instance, 1.0f);
                 al_attach_sample_instance_to_mixer(instance, al_get_default_mixer());
                 break;
 
@@ -108,7 +109,7 @@ namespace Game { namespace api { namespace sound {
 
 
     // API --------------------------------------------------------------------
-    Handle<Value> load(const Arguments& args) {
+    v8::Handle<v8::Value> load(const v8::Arguments& args) {
 
         Sound *sound;
         mapSound(args, sound);
@@ -120,7 +121,7 @@ namespace Game { namespace api { namespace sound {
 
     }
 
-    Handle<Value> play(const Arguments& args) {
+    v8::Handle<v8::Value> play(const v8::Arguments& args) {
 
         Sound *sound;
         mapSound(args, sound);
@@ -130,37 +131,40 @@ namespace Game { namespace api { namespace sound {
             ALLEGRO_SAMPLE_INSTANCE *instance = getInstanceForSample(sound);
             if (instance) {
 
-                // TODO setup sound configuration
                 debugArgs("api::sound", "Play sound '%s'", sound->filename.data()); // TODO log name, volume, pan, speed
-                al_set_sample_instance_playing(instance, true);
-                //al_set_sample_instance_gain(instance, 1.0f);
                 
-                return True();
+                if (args.Length() > 1 && args[1]->IsNumber()) {
+                    float gain = ToFloat(args[1]);
+                    al_set_sample_instance_gain(instance, gain);
+                }
+
+                if (args.Length() > 2 && args[2]->IsNumber()) {
+                    float pan = ToFloat(args[2]);
+                    al_set_sample_instance_pan(instance, pan);
+                }
+                
+                if (args.Length() > 3 && args[3]->IsNumber()) {
+                    float speed = ToFloat(args[3]);
+                    al_set_sample_instance_speed(instance, speed);
+                }
+
+                al_set_sample_instance_playing(instance, true);
+                
+                return v8::True();
 
             } else {
-                return False();
+                return v8::False();
             }
             
         } else {
-            return False();
+            return v8::False();
         }
 
     }
 
-    Handle<Value> setPan(const Arguments& args) {
-        return Undefined();
-    }
-
-    Handle<Value> setVolume(const Arguments& args) {
-        return Undefined();
-    }
-
-    Handle<Value> setSpeed(const Arguments& args) {
-        return Undefined();
-    }
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         sounds = new SoundMap();
 

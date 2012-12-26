@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 #include <v8.h>
-#include <stdio.h>
 #include "src/Game.h"
 
 int main(int argc, char* argv[]) {

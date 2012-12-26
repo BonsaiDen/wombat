@@ -19,8 +19,6 @@
 // THE SOFTWARE.
 #include "Game.h"
 
-using namespace v8;
-
 // Game Namespace -------------------------------------------------------------
 namespace Game {
 
@@ -85,17 +83,17 @@ namespace Game {
         uint32_t version = al_get_allegro_version();
         debugArgs("setup::version", "Allegro %d.%d.%d.%d / v8 %s",
                     version >> 24, (version >> 16) & 255, (version >> 8) & 255,
-                    version & 255, V8::GetVersion());
+                    version & 255, v8::V8::GetVersion());
 
 
         // V8 and API Exposure ------------------------------------------------
-        js.context = Context::New();
-        Context::Scope contextScope(js.context);
+        js.context = v8::Context::New();
+        v8::Context::Scope contextScope(js.context);
 
         // Setup global objects
-        HandleScope scope;
+        v8::HandleScope scope;
 
-        js.global = Persistent<Object>::New(js.context->Global());
+        js.global = v8::Persistent<v8::Object>::New(js.context->Global());
         js.game = JSObject();
         js.console = JSObject();
         js.keyboard = JSObject();
@@ -106,21 +104,21 @@ namespace Game {
         js.sound = JSObject();
 
         // Initiate Object Templates
-        templates.position = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.position = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
         setNumberProp(templates.position, "x", 0);
         setNumberProp(templates.position, "y", 0);
 
-        templates.size = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.size = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
         setNumberProp(templates.size, "w", 0);
         setNumberProp(templates.size, "h", 0);
 
-        templates.color = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.color = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
         setNumberProp(templates.color, "r", 1);
         setNumberProp(templates.color, "g", 1);
         setNumberProp(templates.color, "b", 1);
         setNumberProp(templates.color, "a", 1);
 
-        // Initiate Script Cache for require
+        // Initiate APIs and IO
         api::game::init(js.game);
         api::console::init(js.console);
         api::keyboard::init(js.keyboard);
@@ -190,8 +188,8 @@ namespace Game {
 
         debug("reset");
 
-        Context::Scope contextScope(js.context);
-        HandleScope scope;
+        v8::Context::Scope contextScope(js.context);
+        v8::HandleScope scope;
 
         for(ModuleMap::iterator it = moduleCache->begin(); it != moduleCache->end(); it++) {
             it->second.Dispose();
@@ -206,11 +204,11 @@ namespace Game {
 
     int loop() {
 
-        debug("loop");
+        debugMsg("loop", "Enter");
         
-        Context::Scope contextScope(js.context);
-        HandleScope scope;
-        Handle<Value> args[2];
+        v8::Context::Scope contextScope(js.context);
+        v8::HandleScope scope;
+        v8::Handle<v8::Value> args[2];
 
         double lastFrameTime = 0, now = 0;
         bool redraw = false;
@@ -306,8 +304,8 @@ namespace Game {
                     api::music::update(now, time.delta);
 
                     // Call Game Update Code
-                    args[0] = Number::New(time.time);
-                    args[1] = Number::New(time.delta);
+                    args[0] = v8::Number::New(time.time);
+                    args[1] = v8::Number::New(time.delta);
                     invoke("update", args, 2);
 
                     // Update / Reset Input States
@@ -373,7 +371,7 @@ namespace Game {
                 al_clear_to_color(graphics.bgColor);
 
                 // Call Game Render Code
-                args[0] = Number::New(time.time);
+                args[0] = v8::Number::New(time.time);
                 invoke("render", args, 1);
 
                 // Scale up if necessary
@@ -389,6 +387,8 @@ namespace Game {
             }
 
         }
+
+        debugMsg("loop", "Leave");
 
         exit();
         return 0;
@@ -423,7 +423,7 @@ namespace Game {
         }
         moduleCache->clear();
 
-        debugMsg("exit", "Shutdown APIs");
+        debugMsg("exit", "Shutdown API and IO");
         api::image::shutdown();
         api::music::shutdown();
         api::sound::shutdown();
@@ -455,27 +455,27 @@ namespace Game {
     // Initiliazation Methods -------------------------------------------------
     bool initJS() {
         
-        Context::Scope contextScope(js.context);
-        HandleScope scope;
+        v8::Context::Scope contextScope(js.context);
+        v8::HandleScope scope;
             
         // Setup config object passed to JS
-        Handle<Object> config = JSObject();
-        config->Set(String::New("title"), String::New(graphics.title.data()));
-        config->Set(String::New("width"), Number::New(graphics.width));
-        config->Set(String::New("height"), Number::New(graphics.height));
-        config->Set(String::New("scale"), Number::New(graphics.scale));
-        config->Set(String::New("fps"), Number::New(graphics.fps));
+        v8::Handle<v8::Object> config = JSObject();
+        config->Set(v8::String::NewSymbol("title"), v8::String::New(graphics.title.data()));
+        setNumberProp(config, "width", graphics.width);
+        setNumberProp(config, "height", graphics.height);
+        setNumberProp(config, "scale", graphics.scale);
+        setNumberProp(config, "fps", graphics.fps);
 
-        Handle<Value> args[1];
+        v8::Handle<v8::Value> args[1];
         args[0] = config;
         invoke("init", args, 1);
 
-        graphics.width = ToInt32(config->Get(String::New("width")));
-        graphics.height = ToInt32(config->Get(String::New("height")));
-        graphics.scale = ToInt32(config->Get(String::New("scale")));
-        graphics.fps = ToInt32(config->Get(String::New("fps")));
+        graphics.width = ToInt32(config->Get(v8::String::New("width")));
+        graphics.height = ToInt32(config->Get(v8::String::New("height")));
+        graphics.scale = ToInt32(config->Get(v8::String::New("scale")));
+        graphics.fps = ToInt32(config->Get(v8::String::New("fps")));
 
-        String::Utf8Value text(config->Get(String::New("title")));
+        v8::String::Utf8Value text(config->Get(v8::String::New("title")));
         graphics.title.clear();
         graphics.title.append(*text);
 
@@ -576,20 +576,20 @@ namespace Game {
 
     // V8 Helpers -------------------------------------------------------------
     // ------------------------------------------------------------------------
-    bool invoke(const char *name, Handle<Value> *args, int argc) {
+    bool invoke(const char *name, v8::Handle<v8::Value> *args, int argc) {
 
         if (state.error) {
             return false;
         }
 
-        Context::Scope contextScope(js.context);
-        HandleScope scope;
-        Handle<Value> object = js.game->Get(String::NewSymbol(name));
+        v8::Context::Scope contextScope(js.context);
+        v8::HandleScope scope;
+        v8::Handle<v8::Value> object = js.game->Get(v8::String::NewSymbol(name));
         
         if (object->IsFunction()) {
 
-            Handle<Function> func = Handle<Function>::Cast(object);
-            TryCatch t = TryCatch();
+            v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(object);
+            v8::TryCatch t = v8::TryCatch();
             func->Call(js.global, argc, args);
 
             if (t.HasCaught()) {
@@ -607,27 +607,27 @@ namespace Game {
 
     }
 
-    Handle<Value> require(const Arguments& args) {
+    v8::Handle<v8::Value> require(const v8::Arguments& args) {
         if (args.Length() >= 0) {
             return Game::requireModule(ToString(args[0]));
 
         } else {
-            return Undefined();
+            return v8::Undefined();
         }
     }
 
-    Handle<Value> requireModule(std::string name) {
+    v8::Handle<v8::Value> requireModule(std::string name) {
 
-        HandleScope scope;
-        Handle<Value> exports;
+        v8::HandleScope scope;
+        v8::Handle<v8::Value> exports;
 
         ModuleMap::iterator it = moduleCache->find(name);
         if (it == moduleCache->end()) {
             debugArgs("module::disk", "'%s' required", name.data());
 
-            Handle<Object> module = Handle<Object>::Cast(executeScript(loadScript(name.data())));
-            exports = module->Get(String::New("exports"));
-            moduleCache->insert(std::make_pair(name, Persistent<Value>::New(exports)));
+            v8::Handle<v8::Object> module = v8::Handle<v8::Object>::Cast(executeScript(loadScript(name.data())));
+            exports = module->Get(v8::String::NewSymbol("exports"));
+            moduleCache->insert(std::make_pair(name, v8::Persistent<v8::Value>::New(exports)));
 
         } else {
             exports = it->second;

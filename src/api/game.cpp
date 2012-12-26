@@ -19,59 +19,58 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace game {
 
     // API --------------------------------------------------------------------
-    Handle<Value> getTime(const Arguments& args) {
-        return Number::New(time.time);
+    v8::Handle<v8::Value> getTime(const v8::Arguments& args) {
+        return v8::Number::New(time.time);
     }
 
-    Handle<Value> getDelta(const Arguments& args) {
-        return Number::New(time.delta);
+    v8::Handle<v8::Value> getDelta(const v8::Arguments& args) {
+        return v8::Number::New(time.delta);
     }
 
-    Handle<Value> resume(const Arguments& args) {
+    v8::Handle<v8::Value> resume(const v8::Arguments& args) {
         if (state.paused) {
             state.paused = false;
-            return True();
+            return v8::True();
 
         } else {
-            return False();
+            return v8::False();
         }
     }
 
-    Handle<Value> pause(const Arguments& args) {
+    v8::Handle<v8::Value> pause(const v8::Arguments& args) {
         if (state.paused) {
-            return False();
+            return v8::False();
 
         } else {
             state.paused = true;
-            return True();
+            return v8::True();
         }
     }
 
-    Handle<Value> isPaused(const Arguments& args) {
-        return Boolean::New(state.paused);
+    v8::Handle<v8::Value> isPaused(const v8::Arguments& args) {
+        return v8::Boolean::New(state.paused);
     }
 
-    Handle<Value> reload(const Arguments& args) {
+    v8::Handle<v8::Value> reload(const v8::Arguments& args) {
         state.reload = true;
-        return Undefined();
+        return v8::Undefined();
     }
 
-    Handle<Value> quit(const Arguments& args) {
+    v8::Handle<v8::Value> quit(const v8::Arguments& args) {
         if (state.running) {
             state.running = false;
-            return True();
+            return v8::True();
 
         } else {
-            return False();
+            return v8::False();
         }
     }
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         setFunctionProp(object, "getTime", getTime);
         setFunctionProp(object, "getDelta", getDelta);

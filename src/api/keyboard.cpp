@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace keyboard {
         
     static const char *names[ALLEGRO_KEY_MAX] = { 
@@ -88,7 +87,7 @@ namespace Game { namespace api { namespace keyboard {
 
 
     // API --------------------------------------------------------------------
-    Handle<Value> isDown(const Arguments& args) {
+    v8::Handle<v8::Value> isDown(const v8::Arguments& args) {
         
         bool ok = false;
         if (args.Length() > 0) {
@@ -102,7 +101,7 @@ namespace Game { namespace api { namespace keyboard {
 
     }
 
-    Handle<Value> wasPressed(const Arguments& args) {
+    v8::Handle<v8::Value> wasPressed(const v8::Arguments& args) {
 
         bool ok = false;
         if (args.Length() > 0) {
@@ -116,7 +115,7 @@ namespace Game { namespace api { namespace keyboard {
 
     }
 
-    Handle<Value> wasReleased(const Arguments& args) {
+    v8::Handle<v8::Value> wasReleased(const v8::Arguments& args) {
 
         bool ok = false;
         if (args.Length() > 0) {
@@ -130,20 +129,20 @@ namespace Game { namespace api { namespace keyboard {
 
     }
 
-    Handle<Value> hasFocus(const Arguments& args) {
+    v8::Handle<v8::Value> hasFocus(const v8::Arguments& args) {
         return Game::keyboard.hasFocus ? v8::True() : v8::False();
     }
 
-    Handle<Value> getCount(const Arguments& args) {
-        return Number::New(Game::keyboard.pressedCount);
+    v8::Handle<v8::Value> getCount(const v8::Arguments& args) {
+        return v8::Number::New(Game::keyboard.pressedCount);
     }
 
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         for(unsigned int i = 1; i < 227; i++) {
-            object->Set(String::New(names[i]), Number::New(i));
+            setNumberProp(object, names[i], i);
         }
 
         setFunctionProp(object, "isDown", isDown);

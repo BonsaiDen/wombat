@@ -18,30 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 #include "../Game.h"
-#include <fstream>
 
 namespace Game { namespace io { namespace file {
 
-    char *loadResource(std::string filename, unsigned int *bufSize) {
+    // TODO add switch for memory / disk files
+    // and mopve the al_open_memfile here
+    void *load(std::string filename, int64_t *len) {
         
-        std::ifstream scriptFile;
-        scriptFile.open(filename.data(), std::ifstream::in);
+        ALLEGRO_FILE* file = al_fopen(filename.data(), "r");
+        if (file) {
+            int64_t size = al_fsize(file);
+            void* buffer = al_malloc((size_t)size);
+            al_fread(file, buffer, size);
+            al_fclose(file);
 
-        if (scriptFile.is_open()) {
-
-            scriptFile.seekg(0, std::ios::end);
-            std::ifstream::pos_type size = scriptFile.tellg();
-            
-            char *data = new char[size];
-            scriptFile.seekg(0, std::ios::beg);
-            scriptFile.read(data, size);
-            scriptFile.close();
-
-            *bufSize = size;
-            return data;
+            *len = size;
+            return buffer;
 
         } else {
-            *bufSize = -1;
+            *len = -1;
             return NULL;
         }
 
@@ -51,16 +46,29 @@ namespace Game { namespace io { namespace file {
 
         debugArgs("io::file", "Loading '%s'...", filename.data());
 
-        unsigned int len;
-        char *buf = loadResource(filename, &len);
+        int64_t len;
+        void *buf = load(filename, &len);
 
         if (buf == NULL) {
             debugArgs("io::file", "Failed to load '%s'", filename.data());
             return NULL;
 
         } else {
-            debugArgs("io::file", "Loaded '%s', %d bytes", filename.data(), len);
+            debugArgs("io::file", "Loaded '%s', %d bytes", filename.data(), (int)len);
             return al_open_memfile(buf, len, "r");
+        }
+
+    }
+
+    bool close(ALLEGRO_FILE *fp) {
+
+        if (fp != NULL) {
+            debugMsg("io::file", "Closed file");
+            al_fclose(fp);
+            return true;
+
+        } else {
+            return false;
         }
 
     }

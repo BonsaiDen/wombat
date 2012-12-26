@@ -19,12 +19,10 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace image {
 
     // Structs ----------------------------------------------------------------
-    struct Image;
-    typedef struct Image {
+    typedef struct {
         std::string filename;
         ALLEGRO_BITMAP *bitmap;
         bool loaded;
@@ -60,7 +58,7 @@ namespace Game { namespace api { namespace image {
     }
 
     // API --------------------------------------------------------------------
-    Handle<Value> load(const Arguments& args) {
+    v8::Handle<v8::Value> load(const v8::Arguments& args) {
 
         if (args.Length() > 0) {
                 
@@ -73,24 +71,24 @@ namespace Game { namespace api { namespace image {
             }
 
             if (getImage(ToString(args[0]), rows, cols)->loaded) {   
-                return True();
+                return v8::True();
             }
 
         } 
 
-        return False();
+        return v8::False();
 
     }
 
-    Handle<Value> draw(const Arguments& args) {
+    v8::Handle<v8::Value> draw(const v8::Arguments& args) {
 
         if (args.Length() < 3) {
-            return Undefined();
+            return v8::Undefined();
         }
 
         Image *img = getImage(ToString(args[0]), 1, 1);
         if (img->bitmap == NULL) {
-            return False();
+            return v8::False();
         }
 
         int x = ToInt32(args[1]) + Game::graphics.offsetX; 
@@ -113,11 +111,11 @@ namespace Game { namespace api { namespace image {
             al_draw_tinted_bitmap(img->bitmap, al_map_rgba_f(1, 1, 1, a), x, y, flags);
         }
 
-        return True();
+        return v8::True();
 
     }
 
-    Handle<Value> setTiled(const Arguments& args) {
+    v8::Handle<v8::Value> setTiled(const v8::Arguments& args) {
 
         if (args.Length() >= 3) {
 
@@ -130,19 +128,19 @@ namespace Game { namespace api { namespace image {
             
         }
 
-        return Undefined();
+        return v8::Undefined();
 
     }
 
-    Handle<Value> drawTiled(const Arguments& args) {
+    v8::Handle<v8::Value> drawTiled(const v8::Arguments& args) {
 
         if (args.Length() < 4) {
-            return Undefined();
+            return v8::Undefined();
         }
 
         Image *img = getImage(ToString(args[0]), 1, 1);
         if (img->bitmap == NULL) {
-            return False();
+            return v8::False();
         }
 
         int x = ToInt32(args[1]) + Game::graphics.offsetX; 
@@ -171,13 +169,13 @@ namespace Game { namespace api { namespace image {
             al_draw_tinted_bitmap_region(img->bitmap, al_map_rgba_f(1, 1, 1, a), tx * w, ty * h, w, h, x, y, flags);
         }
 
-        return True();
+        return v8::True();
 
     }
 
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         images = new ImageMap();
 

@@ -19,14 +19,13 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace console {
 
     // API --------------------------------------------------------------------
-    Handle<Value> log(const Arguments& args) {
+    v8::Handle<v8::Value> log(const v8::Arguments& args) {
 
-        HandleScope scope;
-        Local<Function> callee = args.Callee();
+        v8::HandleScope scope;
+        v8::Local<v8::Function> callee = args.Callee();
           
         bool first = true;
 
@@ -40,19 +39,19 @@ namespace Game { namespace api { namespace console {
                 printf(" ");
             }
             
-            String::Utf8Value str(args[i]);
+            v8::String::Utf8Value str(args[i]);
             printf("%s", *str);
 
         }
 
         printf("\n");
-        return Undefined();
+        return v8::Undefined();
 
     }
 
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
         setFunctionProp(object, "log", log);
     }
 

@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace graphics {
 
     #define getNumber(obj, key)
@@ -30,13 +29,13 @@ namespace Game { namespace api { namespace graphics {
         if (l >= 3) { \
             colorValue = al_map_rgba(ToInt32(args[0]), ToInt32(args[1]), ToInt32(args[2]), a); \
         } \
-        return Undefined();
+        return v8::Undefined();
 
     #define colorUnmap(colorValue) \
         unsigned char r, g, b, a; \
         al_unmap_rgba(colorValue, &r, &g, &b, &a); \
         \
-        Handle<Object> col = templates.color->NewInstance(); \
+        v8::Handle<v8::Object> col = templates.color->NewInstance(); \
         setNumberProp(col, "r", r); \
         setNumberProp(col, "g", g); \
         setNumberProp(col, "b", b); \
@@ -49,13 +48,13 @@ namespace Game { namespace api { namespace graphics {
         if (l >= 3) { \
             colorValue = al_map_rgba_f(ToFloat(args[0]), ToFloat(args[1]), ToFloat(args[2]), a); \
         } \
-        return Undefined();
+        return v8::Undefined();
 
     #define colorUnmapFloat(colorValue) \
         float r, g, b, a; \
         al_unmap_rgba_f(colorValue, &r, &g, &b, &a); \
         \
-        Handle<Object> col = templates.color->NewInstance(); \
+        v8::Handle<v8::Object> col = templates.color->NewInstance(); \
         setNumberProp(col, "r", r); \
         setNumberProp(col, "g", g); \
         setNumberProp(col, "b", b); \
@@ -65,17 +64,17 @@ namespace Game { namespace api { namespace graphics {
 
 
     // API --------------------------------------------------------------------
-    Handle<Value> setRenderOffset(const Arguments& args) {
-        return Undefined();
+    v8::Handle<v8::Value> setRenderOffset(const v8::Arguments& args) {
+        return v8::Undefined();
     }
-    Handle<Value> getRenderOffset(const Arguments& args) {
-        Handle<Object> pos = templates.position->NewInstance();
+    v8::Handle<v8::Value> getRenderOffset(const v8::Arguments& args) {
+        v8::Handle<v8::Object> pos = templates.position->NewInstance();
         setNumberProp(pos, "x", Game::graphics.offsetX);
         setNumberProp(pos, "y", Game::graphics.offsetY);
         return pos;
     }
 
-    Handle<Value> setScale(const Arguments& args) {
+    v8::Handle<v8::Value> setScale(const v8::Arguments& args) {
         if (args.Length() >= 1) {
             int scale = ToInt32(args[0]);
             if (scale != Game::graphics.scale) {
@@ -83,13 +82,13 @@ namespace Game { namespace api { namespace graphics {
                 Game::graphics.wasResized = true;
             }
         }
-        return Undefined();
+        return v8::Undefined();
     }
-    Handle<Value> getScale(const Arguments& args) {
-        return Number::New(Game::graphics.scale);
+    v8::Handle<v8::Value> getScale(const v8::Arguments& args) {
+        return v8::Number::New(Game::graphics.scale);
     }
 
-    Handle<Value> setSize(const Arguments& args) {
+    v8::Handle<v8::Value> setSize(const v8::Arguments& args) {
         if (args.Length() >= 2) {
             int width = ToInt32(args[0]);
             int height = ToInt32(args[1]);
@@ -99,10 +98,10 @@ namespace Game { namespace api { namespace graphics {
                 Game::graphics.wasResized = true;
             }
         }
-        return Undefined();
+        return v8::Undefined();
     }
-    Handle<Value> getSize(const Arguments& args) {
-        Handle<Object> size = templates.size->NewInstance();
+    v8::Handle<v8::Value> getSize(const v8::Arguments& args) {
+        v8::Handle<v8::Object> size = templates.size->NewInstance();
         setNumberProp(size, "w", Game::graphics.width);
         setNumberProp(size, "h", Game::graphics.height);
         return size;
@@ -111,44 +110,44 @@ namespace Game { namespace api { namespace graphics {
 
     // Colors ---------------------------------------------------------------------
     // ----------------------------------------------------------------------------
-    Handle<Value> setColor(const Arguments& args) {
+    v8::Handle<v8::Value> setColor(const v8::Arguments& args) {
         colorMap(Game::graphics.color);
     }
-    Handle<Value> getColor(const Arguments& args) {
+    v8::Handle<v8::Value> getColor(const v8::Arguments& args) {
         colorUnmap(Game::graphics.color);
     }
 
 
-    Handle<Value> setBackColor(const Arguments& args) {
+    v8::Handle<v8::Value> setBackColor(const v8::Arguments& args) {
         colorMap(Game::graphics.bgColor);
     }
-    Handle<Value> getBackColor(const Arguments& args) {
+    v8::Handle<v8::Value> getBackColor(const v8::Arguments& args) {
         colorUnmap(Game::graphics.bgColor);
     }
 
 
-    Handle<Value> setBlendColor(const Arguments& args) {
+    v8::Handle<v8::Value> setBlendColor(const v8::Arguments& args) {
         colorMapFloat(Game::graphics.blendColor);
     }
-    Handle<Value> getBlendColor(const Arguments& args) {
+    v8::Handle<v8::Value> getBlendColor(const v8::Arguments& args) {
         colorUnmapFloat(Game::graphics.blendColor);
     }
 
 
     // Primitives -----------------------------------------------------------------
     // ----------------------------------------------------------------------------
-    Handle<Value> setLineWidth(const Arguments& args) {
+    v8::Handle<v8::Value> setLineWidth(const v8::Arguments& args) {
         if (args.Length() >= 1) {
             Game::graphics.lineWidth = ToInt32(args[0]);
         }
-        return Undefined();
+        return v8::Undefined();
     }
 
-    Handle<Value> getLineWidth(const Arguments& args) {
-        return Number::New(Game::graphics.lineWidth);
+    v8::Handle<v8::Value> getLineWidth(const v8::Arguments& args) {
+        return v8::Number::New(Game::graphics.lineWidth);
     }
 
-    Handle<Value> line(const Arguments& args) {
+    v8::Handle<v8::Value> line(const v8::Arguments& args) {
 
         if (args.Length() >= 4) {
 
@@ -166,11 +165,11 @@ namespace Game { namespace api { namespace graphics {
             
         }
 
-        return Undefined();
+        return v8::Undefined();
 
     }
 
-    Handle<Value> rect(const Arguments& args) {
+    v8::Handle<v8::Value> rect(const v8::Arguments& args) {
 
         if (args.Length() >= 4) {
 
@@ -195,12 +194,12 @@ namespace Game { namespace api { namespace graphics {
 
         }
 
-        return Undefined();
+        return v8::Undefined();
 
     }
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         setFunctionProp(object, "setRenderOffset", setRenderOffset);
         setFunctionProp(object, "getRenderOffset", getRenderOffset);

@@ -19,31 +19,30 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace v8;
 namespace Game { namespace api { namespace mouse {
 
     // API --------------------------------------------------------------------
-    Handle<Value> hide(const Arguments& args) {
+    v8::Handle<v8::Value> hide(const v8::Arguments& args) {
         al_hide_mouse_cursor(Game::allegro.display);
-        return Undefined();
+        return v8::Undefined();
     }
     
-    Handle<Value> show(const Arguments& args) {
+    v8::Handle<v8::Value> show(const v8::Arguments& args) {
         al_show_mouse_cursor(Game::allegro.display);
-        return Undefined();
+        return v8::Undefined();
     }
 
-    Handle<Value> grab(const Arguments& args) {
+    v8::Handle<v8::Value> grab(const v8::Arguments& args) {
         al_grab_mouse(Game::allegro.display);
-        return Undefined();
+        return v8::Undefined();
     }
     
-    Handle<Value> ungrab(const Arguments& args) {
+    v8::Handle<v8::Value> ungrab(const v8::Arguments& args) {
         al_ungrab_mouse();
-        return Undefined();
+        return v8::Undefined();
     }
 
-    Handle<Value> setCursor(const Arguments& args) {
+    v8::Handle<v8::Value> setCursor(const v8::Arguments& args) {
 
         ALLEGRO_SYSTEM_MOUSE_CURSOR cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT;
         if (args.Length() > 0) {
@@ -51,15 +50,15 @@ namespace Game { namespace api { namespace mouse {
         }
 
         if (al_set_system_mouse_cursor(Game::allegro.display, cursor)) {
-            return True();
+            return v8::True();
                 
         } else {
-            return False();
+            return v8::False();
         }
 
     }
 
-    Handle<Value> isDown(const Arguments& args) {
+    v8::Handle<v8::Value> isDown(const v8::Arguments& args) {
         
         bool ok = false;
         if (args.Length() > 0) {
@@ -73,7 +72,7 @@ namespace Game { namespace api { namespace mouse {
 
     }
 
-    Handle<Value> wasPressed(const Arguments& args) {
+    v8::Handle<v8::Value> wasPressed(const v8::Arguments& args) {
 
         bool ok = false;
         if (args.Length() > 0) {
@@ -87,7 +86,7 @@ namespace Game { namespace api { namespace mouse {
 
     }
 
-    Handle<Value> wasReleased(const Arguments& args) {
+    v8::Handle<v8::Value> wasReleased(const v8::Arguments& args) {
 
         bool ok = false;
         if (args.Length() > 0) {
@@ -101,15 +100,15 @@ namespace Game { namespace api { namespace mouse {
 
     }
 
-    Handle<Value> hasFocus(const Arguments& args) {
+    v8::Handle<v8::Value> hasFocus(const v8::Arguments& args) {
         return Game::mouse.hasFocus ? v8::True() : v8::False();
     }
 
-    Handle<Value> getCount(const Arguments& args) {
-        return Number::New(Game::mouse.pressedCount);
+    v8::Handle<v8::Value> getCount(const v8::Arguments& args) {
+        return v8::Number::New(Game::mouse.pressedCount);
     }
 
-    Handle<Value> getPosition(const Arguments& args) {
+    v8::Handle<v8::Value> getPosition(const v8::Arguments& args) {
 
         int offsetX = 0;
         int offsetY = 0;
@@ -118,7 +117,7 @@ namespace Game { namespace api { namespace mouse {
             offsetY = ToInt32(args[1]);
         }
 
-        Handle<Object> pos = Game::templates.position->NewInstance();
+        v8::Handle<v8::Object> pos = Game::templates.position->NewInstance();
         setNumberProp(pos, "x", Game::mouse.x - Game::graphics.offsetX + offsetX);
         setNumberProp(pos, "y", Game::mouse.y - Game::graphics.offsetY + offsetY);
 
@@ -128,7 +127,7 @@ namespace Game { namespace api { namespace mouse {
 
 
     // Export -----------------------------------------------------------------
-    void init(Handle<Object> object) {
+    void init(v8::Handle<v8::Object> object) {
 
         setNumberProp(object, "CURSOR_NONE", ALLEGRO_SYSTEM_MOUSE_CURSOR_NONE);
         setNumberProp(object, "CURSOR_DEFAULT", ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT);

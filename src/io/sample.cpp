@@ -26,11 +26,12 @@ namespace Game { namespace io { namespace sample {
         debugArgs("io::sample", "Loading '%s'...", filename.data());
 
         ALLEGRO_SAMPLE *sample = NULL;
-        ALLEGRO_FILE *file  = file::open(filename);
+        ALLEGRO_FILE *fp  = file::open(filename);
 
-        if (file != NULL) {
+        if (fp != NULL) {
             std::string ext = filename.substr(filename.find_last_of("."));
-            sample = al_load_sample_f(file, ext.data());
+            sample = al_load_sample_f(fp, ext.data());
+            file::close(fp);
         } 
         
         if (sample) {

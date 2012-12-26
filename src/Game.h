@@ -20,18 +20,8 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <stdio.h>
-
-#define MAX_MOUSE 8
-
-#define setFunctionProp(obj, name, func) obj->Set(String::NewSymbol(name), FunctionTemplate::New(func)->GetFunction());
-#define setNumberProp(obj, name, num) obj->Set(String::NewSymbol(name), Number::New(num));
-#define setProp(obj, name, val) obj->Set(String::NewSymbol(name), val);
-
-#define debug(id) printf("[game::" id "]\n");
-#define debugMsg(id, msg) printf("[game::" id "] " msg "\n");
-#define debugArgs(id, msg, options...) printf("[game::" id "] " msg "\n", options);
-
+#include "js.h"
+#include <v8.h>
 
 #include <string>
 #include <map>
@@ -42,8 +32,19 @@
 #include <allegro5/allegro_acodec.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_memfile.h>
-#include <v8.h>
-#include "js.h"
+
+#include <stdio.h>
+
+#define MAX_MOUSE 8
+
+#define setFunctionProp(obj, name, func) obj->Set(v8::String::NewSymbol(name), v8::FunctionTemplate::New(func)->GetFunction());
+#define setNumberProp(obj, name, num) obj->Set(v8::String::NewSymbol(name), v8::Number::New(num));
+#define setProp(obj, name, val) obj->Set(v8::String::NewSymbol(name), val);
+
+#define debug(id) printf("[game::" id "]\n");
+#define debugMsg(id, msg) printf("[game::" id "] " msg "\n");
+#define debugArgs(id, msg, options...) printf("[game::" id "] " msg "\n", options);
+
 
 // Game Namespace -------------------------------------------------------------
 namespace Game {
@@ -211,6 +212,7 @@ namespace Game {
 
         namespace file {
             ALLEGRO_FILE *open(std::string filename);
+            bool close(ALLEGRO_FILE *fp);
         }
 
         namespace image {
