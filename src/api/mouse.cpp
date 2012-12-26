@@ -22,20 +22,19 @@
 using namespace v8;
 namespace Game { namespace api { namespace mouse {
 
-
     // API --------------------------------------------------------------------
     Handle<Value> hide(const Arguments& args) {
-        al_hide_mouse_cursor(Game::display);
+        al_hide_mouse_cursor(Game::allegro.display);
         return Undefined();
     }
     
     Handle<Value> show(const Arguments& args) {
-        al_show_mouse_cursor(Game::display);
+        al_show_mouse_cursor(Game::allegro.display);
         return Undefined();
     }
 
     Handle<Value> grab(const Arguments& args) {
-        al_grab_mouse(Game::display);
+        al_grab_mouse(Game::allegro.display);
         return Undefined();
     }
     
@@ -48,87 +47,10 @@ namespace Game { namespace api { namespace mouse {
 
         ALLEGRO_SYSTEM_MOUSE_CURSOR cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT;
         if (args.Length() > 0) {
-            switch(ToInt32(args[0])) {
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_ARROW:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_ARROW;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_BUSY:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_BUSY;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_QUESTION:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_QUESTION;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_EDIT:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_EDIT;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_MOVE:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_MOVE;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_N:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_N;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_W:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_W;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_S:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_S;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_E:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_E;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NW:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NW;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SW:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SW;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SE:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SE;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NE:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NE;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_PROGRESS:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_PROGRESS;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_PRECISION:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_PRECISION;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_LINK:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_LINK;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_ALT_SELECT:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_ALT_SELECT;
-                    break;
-
-                case ALLEGRO_SYSTEM_MOUSE_CURSOR_UNAVAILABLE:
-                    cursor = ALLEGRO_SYSTEM_MOUSE_CURSOR_UNAVAILABLE;
-                    break;
-                
-            }
+            cursor = (ALLEGRO_SYSTEM_MOUSE_CURSOR)ToInt32(args[0]);
         }
 
-        if (al_set_system_mouse_cursor(Game::display, cursor)) {
+        if (al_set_system_mouse_cursor(Game::allegro.display, cursor)) {
             return True();
                 
         } else {

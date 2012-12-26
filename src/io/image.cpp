@@ -19,26 +19,25 @@
 // THE SOFTWARE.
 #include "../Game.h"
 
-using namespace std;
 namespace Game { namespace io { namespace image {
 
-    ALLEGRO_BITMAP *open(string filename) {
+    ALLEGRO_BITMAP *open(std::string filename) {
 
-        printf("[io::image] Loading \"%s\"...\n", filename.data());
+        debugArgs("io::image", "Loading '%s'...", filename.data());
 
         ALLEGRO_BITMAP *img = NULL;
         ALLEGRO_FILE *file  = file::open(filename);
 
         if (file != NULL) {
-            string ext = filename.substr(filename.find_last_of("."));
+            std::string ext = filename.substr(filename.find_last_of("."));
             img = al_load_bitmap_f(file, ext.data());
         } 
         
         if (img) {
-            printf("[io::image] Loaded \"%s\"\n", filename.data());
+            debugArgs("io::image", "Loaded '%s'", filename.data());
 
         } else {
-            printf("[io::image] Failed to load \"%s\"\n", filename.data());
+            debugArgs("io::image", "Failed to load '%s'", filename.data());
         }
 
         return img;

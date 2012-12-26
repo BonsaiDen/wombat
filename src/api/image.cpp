@@ -22,18 +22,16 @@
 using namespace v8;
 namespace Game { namespace api { namespace image {
 
-    Image* getImage(string filename, const int cols, const int rows) {
+    Image* getImage(std::string filename, const int cols, const int rows) {
         
         // Check if we need to load the image
         ImageMap::iterator it = images->find(filename);
         if (it == images->end()) {
             
             Image *img = new Image();
+            img->filename = filename;
             img->bitmap = io::image::open(filename);
-            if (img->bitmap == NULL) {
-                printf("[api::image] Failed to load \"%s\"\n", filename.data());
-            }
-
+            img->loaded = img->bitmap != NULL;
             img->cols = cols;
             img->rows = rows;
             images->insert(std::make_pair(filename, img));
@@ -59,7 +57,7 @@ namespace Game { namespace api { namespace image {
                 rows = ToInt32(args[2]);
             }
 
-            if (getImage(ToString(args[0]), rows, cols) != NULL) {   
+            if (getImage(ToString(args[0]), rows, cols)->loaded) {   
                 return v8::True();
             }
 
@@ -75,8 +73,7 @@ namespace Game { namespace api { namespace image {
             return Undefined();
         }
 
-        string filename = ToString(args[0]);
-        Image *img = getImage(filename, 1, 1);
+        Image *img = getImage(ToString(args[0]), 1, 1);
         if (img->bitmap == NULL) {
             return False();
         }
@@ -109,12 +106,10 @@ namespace Game { namespace api { namespace image {
 
         if (args.Length() >= 3) {
 
-            string filename = ToString(args[0]);
-
             int cols = ToInt32(args[1]);
             int rows = ToInt32(args[2]);
 
-            Image *img = getImage(filename, cols, rows);
+            Image *img = getImage(ToString(args[0]), cols, rows);
             img->cols = cols;
             img->rows = rows;
             
@@ -130,8 +125,7 @@ namespace Game { namespace api { namespace image {
             return Undefined();
         }
 
-        string filename = ToString(args[0]);
-        Image *img = getImage(filename, 1, 1);
+        Image *img = getImage(ToString(args[0]), 1, 1);
         if (img->bitmap == NULL) {
             return False();
         }

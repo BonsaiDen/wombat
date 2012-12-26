@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 #include "Game.h"
 
-using namespace std;
+using namespace v8;
 
 // Game Namespace -------------------------------------------------------------
 namespace Game {
@@ -28,39 +28,138 @@ namespace Game {
     struct Templates templates;
     ModuleMap *moduleCache;
 
-    // General Allegro state
-    ALLEGRO_DISPLAY *display;
-    ALLEGRO_BITMAP *background;
-    ALLEGRO_EVENT_QUEUE *eventQueue;
-    ALLEGRO_TIMER *timer;
-
     // State
+    struct Allegro allegro;
     struct JS js;
     struct State state;
     struct Time time;
     struct Mouse mouse;
     struct Keyboard keyboard;
     struct Graphics graphics;
+
     ImageMap *images;
+    SoundMap *sounds;
+    MusicMap *musics;
+
+    // Methods ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    bool init(std::string filename) {
+
+        debug("init");
+        setup();
+
+        // Use custom game file
+        if (filename.length()) {
+
+            state.main = filename;
+
+            // split path and chdir to the new base if required
+            size_t found;
+            found = filename.find_last_of("/\\");
+            if (found != filename.npos) {
+
+                std::string path = filename.substr(0, found);
+                state.main = filename.substr(found + 1);
+                if (chdir(path.data())) {
+                    return false;
+                }
+                
+                debugArgs("init", "new base is '%s'", path.data());
+
+            }
+
+        }
+
+        reset();
+
+        if (!initJS() || !initAllegro()) {
+            exit();
+            return false;
+
+        } else {
+            invoke("load", NULL, 0);
+            return true;
+        }
+
+    }
+
+    void setup() {
+
+        // Version information
+        uint32_t version = al_get_allegro_version();
+        debugArgs("setup::version", "Allegro %d.%d.%d.%d / v8 %s",
+                    version >> 24, (version >> 16) & 255, (version >> 8) & 255,
+                    version & 255, V8::GetVersion());
 
 
-    bool init(Persistent<Context> context) {
+        // V8 and API Exposure ------------------------------------------------
+        js.context = Context::New();
+        Context::Scope contextScope(js.context);
 
-        initV8(context);
-        initAPI();
+        // Setup global objects
+        HandleScope scope;
+
+        js.global = Persistent<Object>::New(js.context->Global());
+        js.game = JSObject();
+        js.console = JSObject();
+        js.keyboard = JSObject();
+        js.mouse = JSObject();
+        js.graphics = JSObject();
+        js.image = JSObject();
+        js.music = JSObject();
+        js.sound = JSObject();
+
+        // Initiate Object Templates
+        templates.position = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.position->Set(String::New("x"), Number::New(0));
+        templates.position->Set(String::New("y"), Number::New(0));
+
+        templates.size = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.size->Set(String::New("w"), Number::New(0));
+        templates.size->Set(String::New("h"), Number::New(0));
+
+        templates.color = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+        templates.color->Set(String::New("r"), Number::New(1));
+        templates.color->Set(String::New("g"), Number::New(1));
+        templates.color->Set(String::New("b"), Number::New(1));
+        templates.color->Set(String::New("a"), Number::New(1));
+
+        // Initiate Script Cache for require
+        api::game::init(js.game);
+        api::console::init(js.console);
+        api::keyboard::init(js.keyboard);
+        api::mouse::init(js.mouse);
+        api::graphics::init(js.graphics);
+        api::image::init(js.image);
+        api::music::init(js.music);
+        api::sound::init(js.sound);
+
+        // Expose mapped API to JavaScript
+        js.global->Set(String::New("console"), js.console);
+        js.global->Set(String::New("game"), js.game);
+        js.global->Set(String::New("keyboard"), js.keyboard);
+        js.global->Set(String::New("mouse"), js.mouse);
+        js.global->Set(String::New("graphics"), js.graphics);
+        js.global->Set(String::New("image"), js.image);
+        js.global->Set(String::New("music"), js.music);
+        js.global->Set(String::New("sound"), js.sound);
+        exposeApi(js.global, "require", require);
+
+
+        // Game State Specific ------------------------------------------------
 
         // Allegro Things
-        eventQueue = NULL;
-        timer = NULL;
-        display = NULL;
-        background = NULL;
+        allegro.eventQueue = NULL;
+        allegro.timer = NULL;
+        allegro.display = NULL;
+        allegro.background = NULL;
 
         // State and Time
         state.running = false;
         state.paused = false;
         state.reload = false;
-        state.main = "game";
         state.error = false;
+        state.main = "game";
 
         time.time = 0;
         time.delta = 0;
@@ -86,98 +185,50 @@ namespace Game {
         graphics.offsetX = 0;
         graphics.offsetY = 0;
 
-        // Images
+        // Resources
         images = new ImageMap();
-
-        // TODO add error checking
-        return true;
-
-    }
-
-    bool start(string filename) {
-
-        // Use custom game file
-        if (filename.length()) {
-
-            state.main = filename;
-
-            // split path and chdir to the new base if required
-            size_t found;
-            found = filename.find_last_of("/\\");
-            if (found != filename.npos) {
-
-                string path = filename.substr(0, found);
-                state.main = filename.substr(found + 1);
-
-                printf("[game::start] new base is '%s'\n", path.data());
-
-                if (chdir(path.data())) {
-                    return false;
-                }
-                
-            }
-
-        }
-
-        reset();
-
-        if (!initJS()) {
-            return false;
-
-        } else if (!initAllegro()) {
-            return false;
-
-        } else {
-            callGameMethod("load", NULL, 0);
-            return true;
-        }
+        sounds = new SoundMap();
+        musics = new MusicMap();
+        moduleCache = new ModuleMap();
 
     }
 
     void reset() {
 
-        //Handle<Array> keys = js.global->GetPropertyNames();
-        //for (unsigned int i = 0; i < keys->Length(); i++) {
+        debug("reset");
 
-            //Handle<String> name = keys->Get(Number::New(i))->ToString();
-            //js.global->ForceDelete(name);
-            //String::Utf8Value text(name);
-            //printf("%s\n", *text);
+        Context::Scope contextScope(js.context);
+        HandleScope scope;
 
-        //}
-
-        // Expose mapped API to JavaScript
-        js.global->Set(String::New("console"), js.console);
-        js.global->Set(String::New("game"), js.game);
-        js.global->Set(String::New("keyboard"), js.keyboard);
-        js.global->Set(String::New("mouse"), js.mouse);
-        js.global->Set(String::New("graphics"), js.graphics);
-        js.global->Set(String::New("image"), js.image);
-        js.global->Set(String::New("sound"), js.sound);
-
+        for(ModuleMap::iterator it = moduleCache->begin(); it != moduleCache->end(); it++) {
+            it->second.Dispose();
+            it->second.Clear();
+        }
         moduleCache->clear();
+
         state.error = false;
-        exposeApi(js.global, "require", require);
         requireModule(state.main);
         
     }
 
     int loop() {
+
+        debug("loop");
         
-        double lastFrameTime = 0, now = 0;
-        bool redraw = true;
-        unsigned int i = 0;
-        
+        Context::Scope contextScope(js.context);
         HandleScope scope;
         Handle<Value> args[2];
 
-        al_start_timer(timer);
+        double lastFrameTime = 0, now = 0;
+        bool redraw = false;
+        unsigned int i = 0;
 
+        al_start_timer(allegro.timer);
         state.running = true;
         while (state.running) {
 
             ALLEGRO_EVENT event;
-            al_wait_for_event(eventQueue, &event);
+            al_wait_for_event(allegro.eventQueue, &event);
 
             // Handle Events
             switch (event.type) {
@@ -257,30 +308,28 @@ namespace Game {
                     time.time += time.delta;
                     lastFrameTime = now;
 
+                    // Check pending sample instances
+                    api::sound::update(now, time.delta);
+                    api::music::update(now, time.delta);
+
                     // Call Game Update Code
                     args[0] = Number::New(time.time);
                     args[1] = Number::New(time.delta);
-                    callGameMethod("update", args, 2);
+                    invoke("update", args, 2);
 
                     // Update / Reset Input States
                     for(i = 0; i < ALLEGRO_KEY_MAX; i++) {
-
                         if (keyboard.state[i] == 1) {
                             keyboard.state[i] = 2;
                         }
-
                         keyboard.stateOld[i] = keyboard.state[i];
-
                     }
 
                     for(i = 0; i < MAX_MOUSE; i++) {
-
                         if (mouse.state[i] == 1) {
                             mouse.state[i] = 2;
                         }
-
                         mouse.stateOld[i] = mouse.state[i];
-
                     }   
 
                     redraw = true;
@@ -298,25 +347,24 @@ namespace Game {
 
             }
 
-
-            // Render it out
-            if (redraw && al_is_event_queue_empty(eventQueue)) {
+            // Render 
+            if (redraw && al_is_event_queue_empty(allegro.eventQueue)) {
 
                 // Handle resizing
                 if (graphics.wasResized) {
 
-                    al_resize_display(display, graphics.width * graphics.scale, graphics.height * graphics.scale);
+                    al_resize_display(allegro.display, graphics.width * graphics.scale, graphics.height * graphics.scale);
 
-                    if (background != NULL) {
-                        al_destroy_bitmap(background);
+                    if (allegro.background != NULL) {
+                        al_destroy_bitmap(allegro.background);
                     }
 
                     if (graphics.scale != 1) {
-                        background = al_create_bitmap(graphics.width, graphics.height);
-                        al_set_target_bitmap(background);
+                        allegro.background = al_create_bitmap(graphics.width, graphics.height);
+                        al_set_target_bitmap(allegro.background);
 
                     } else {
-                        al_set_target_bitmap(al_get_backbuffer(display));
+                        al_set_target_bitmap(al_get_backbuffer(allegro.display));
                     }
 
                     graphics.wasResized = false;
@@ -324,22 +372,19 @@ namespace Game {
                 }
 
                 if (graphics.scale != 1) {
-                    al_set_target_bitmap(background);
+                    al_set_target_bitmap(allegro.background);
                 }
-
-                unsigned char r, g, b, a;
-                al_unmap_rgba(graphics.bgColor, &r, &g, &b, &a);
 
                 al_clear_to_color(graphics.bgColor);
 
                 // Call Game Render Code
                 args[0] = Number::New(time.time);
-                callGameMethod("render", args, 1);
+                invoke("render", args, 1);
 
                 // Scale up if necessary
                 if (graphics.scale != 1) {
-                    al_set_target_bitmap(al_get_backbuffer(display));
-                    al_draw_scaled_bitmap(background, 0, 0, graphics.width, graphics.height, 0, 0, 
+                    al_set_target_bitmap(al_get_backbuffer(allegro.display));
+                    al_draw_scaled_bitmap(allegro.background, 0, 0, graphics.width, graphics.height, 0, 0, 
                                           graphics.width * graphics.scale, graphics.height * graphics.scale, 0);
                 }
 
@@ -350,53 +395,99 @@ namespace Game {
 
         }
 
+        exit();
         return 0;
  
     }
 
+    void exit() {
+
+        // Remove images ------------------------------------------------------
+        debugMsg("cleanup", "Images");
+        for(ImageMap::iterator it = images->begin(); it != images->end(); it++) {
+            Image *img = it->second;
+            if (img->bitmap) {
+                debugArgs("cleanup::bitmap", "destroyed '%s'", img->filename.data());
+                al_destroy_bitmap(img->bitmap);
+            }
+            debugArgs("cleanup::image", "destroyed '%s'", img->filename.data());
+            delete img;
+        }
+        images->clear();
+
+        // Remove sounds ------------------------------------------------------
+        debugMsg("cleanup", "Sounds");
+        for(SoundMap::iterator it = sounds->begin(); it != sounds->end(); it++) {
+            Sound *snd = it->second;
+            if (snd->sample) {
+                debugArgs("cleanup::sample", "destroyed '%s'", snd->filename.data());
+                al_destroy_sample(snd->sample);
+            }
+            debugArgs("cleanup::sound", "destroyed '%s'", snd->filename.data());
+            delete snd;
+        }
+        sounds->clear();
+
+        // TODO remove musics
+
+        // Clean up allegro ---------------------------------------------------
+        debugMsg("cleanup", "Allegro");
+        if (allegro.mixer) {
+            al_destroy_mixer(allegro.mixer);
+        }
+
+        if (allegro.voice) {
+            al_destroy_voice(allegro.voice);
+        }
+
+        al_destroy_timer(allegro.timer);
+        al_destroy_event_queue(allegro.eventQueue);
+        al_destroy_display(allegro.display);
+
+        if (allegro.background != NULL) {
+            al_destroy_bitmap(allegro.background);
+        }
+        
+        // Remove cached modules
+        debugMsg("cleanup", "Modules");
+        for(ModuleMap::iterator it = moduleCache->begin(); it != moduleCache->end(); it++) {
+            it->second.Dispose();
+            it->second.Clear();
+        }
+        moduleCache->clear();
+
+        api::music::exit();
+        api::sound::exit();
+
+        // Cleanup APIs
+        debugMsg("cleanup", "JS");
+        js.game.Dispose();
+        js.console.Dispose();
+        js.keyboard.Dispose();
+        js.mouse.Dispose();
+        js.graphics.Dispose();
+        js.image.Dispose();
+        js.music.Dispose();
+        js.sound.Dispose();
+        
+        // Remove templates
+        templates.position.Dispose();
+        templates.size.Dispose();
+        templates.color.Dispose();
+        
+        // Remove context
+        js.global.Dispose();
+        js.context.Dispose();
+        js.context.Clear();
+
+    }
+
 
     // Initiliazation Methods -------------------------------------------------
-    void initV8(Persistent<Context> context) {
-        
-        // Setup API Exposure
-        moduleCache = new ModuleMap();
-
-        js.global = context->Global();
-        js.game = JSObject();
-        js.console = JSObject();
-        js.keyboard = JSObject();
-        js.mouse = JSObject();
-        js.graphics = JSObject();
-        js.image = JSObject();
-        js.sound = JSObject();
-
-        // Initiate Object Templates
-        templates.position = ObjectTemplate::New();
-        templates.position->Set(String::New("x"), Number::New(0));
-        templates.position->Set(String::New("y"), Number::New(0));
-
-        templates.size = ObjectTemplate::New();
-        templates.size->Set(String::New("w"), Number::New(0));
-        templates.size->Set(String::New("h"), Number::New(0));
-
-        templates.color = ObjectTemplate::New();
-        templates.color->Set(String::New("r"), Number::New(1));
-        templates.color->Set(String::New("g"), Number::New(1));
-        templates.color->Set(String::New("b"), Number::New(1));
-        templates.color->Set(String::New("a"), Number::New(1));
-
-    }
-
-    void initAPI() {
-        api::game::init(js.game);
-        api::console::init(js.console);
-        api::keyboard::init(js.keyboard);
-        api::mouse::init(js.mouse);
-        api::graphics::init(js.graphics);
-        api::image::init(js.image);
-    }
-
     bool initJS() {
+        
+        Context::Scope contextScope(js.context);
+        HandleScope scope;
             
         // Setup config object passed to JS
         Handle<Object> config = JSObject();
@@ -408,7 +499,7 @@ namespace Game {
 
         Handle<Value> args[1];
         args[0] = config;
-        callGameMethod("init", args, 1);
+        invoke("init", args, 1);
 
         graphics.width = ToInt32(config->Get(String::New("width")));
         graphics.height = ToInt32(config->Get(String::New("height")));
@@ -420,15 +511,15 @@ namespace Game {
         graphics.title.append(*text);
 
         if (graphics.width * graphics.scale <= 0 || graphics.width >= 1024 * graphics.scale) {
-            dump("config: Invalid graphics.width");
+            debugMsg("initJS", "Invalid graphics.width");
             return false;
 
         } else if (graphics.height * graphics.scale <= 0 || graphics.height >= 768 * graphics.scale) {
-            dump("config: Invalid graphics.height");
+            debugMsg("initJS", "Invalid graphics.height");
             return false;
 
         } else if (graphics.fps <= 0 || graphics.fps > 60) {
-            dump("config: Invalid frame rate");
+            debugMsg("initJS", "Invalid graphics.fps");
             return false;
         }
 
@@ -445,47 +536,46 @@ namespace Game {
 
         // Init Allegro
         if (!al_init()) {
-            dump("init: Failed to initialize allegro::core");
+            debugMsg("initAllegro", "al_init() failed");
             return false;
         }
 
         if (!al_init_image_addon() || !al_init_primitives_addon()) {
-            dump("init: Failed to initialize allegro::addons");
+            debugMsg("initAllegro", "al_init_image_addon() failed");
             return false;
         }
 
-        // Setup Display
-        display = al_create_display(graphics.width * graphics.scale, graphics.height * graphics.scale);
-        if (display == NULL) {
-            dump("init: Failed to create allegro::display");
+        allegro.timer = al_create_timer(1.0 / graphics.fps);
+        allegro.eventQueue = al_create_event_queue();
+        al_install_keyboard();
+        al_install_mouse();
+
+        keyboard.hasFocus = true;
+
+        al_register_event_source(allegro.eventQueue, al_get_keyboard_event_source());
+        al_register_event_source(allegro.eventQueue, al_get_mouse_event_source());
+        al_register_event_source(allegro.eventQueue, al_get_timer_event_source(allegro.timer));
+
+
+        // Setup Display ------------------------------------------------------
+        allegro.display = al_create_display(graphics.width * graphics.scale, graphics.height * graphics.scale);
+        if (allegro.display == NULL) {
+            debugMsg("initAllegro", "al_create_display() failed");
             return false;
         }
 
         al_set_new_display_option(ALLEGRO_VSYNC, true, ALLEGRO_SUGGEST);
-        al_set_window_title(display, graphics.title.data());
-        keyboard.hasFocus = true;
-
-        // Setup Timer
-        timer = al_create_timer(1.0 / graphics.fps);
-
-        // Setup events
-        eventQueue = al_create_event_queue();
-        al_install_keyboard();
-        al_install_mouse();
-
-        al_register_event_source(eventQueue, al_get_keyboard_event_source());
-        al_register_event_source(eventQueue, al_get_mouse_event_source());
-        al_register_event_source(eventQueue, al_get_display_event_source(display));
-        al_register_event_source(eventQueue, al_get_timer_event_source(timer));
+        al_set_window_title(allegro.display, graphics.title.data());
+        al_register_event_source(allegro.eventQueue, al_get_display_event_source(allegro.display));
 
 
-        // Setup Graphics
+        // Setup Graphics -----------------------------------------------------
         if (graphics.scale != 1) {
-            background = al_create_bitmap(graphics.width, graphics.height);
-            al_set_target_bitmap(background);
+            allegro.background = al_create_bitmap(graphics.width, graphics.height);
+            al_set_target_bitmap(allegro.background);
 
         } else {
-            al_set_target_bitmap(al_get_backbuffer(display));
+            al_set_target_bitmap(al_get_backbuffer(allegro.display));
         }
 
         graphics.color = al_map_rgba(255, 255, 255, 255); 
@@ -494,19 +584,37 @@ namespace Game {
 
         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
 
+
+        // Setup Audio --------------------------------------------------------
+        if (!al_install_audio() || !al_init_acodec_addon()) {
+            debugMsg("initAllegro", "al_init_audio() failed");
+            return false;
+        }
+
+        allegro.voice = al_create_voice(44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_2);
+        allegro.mixer = al_create_mixer(44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_2);
+
+        al_attach_mixer_to_voice(allegro.mixer, allegro.voice);
+        if (!al_set_default_mixer(allegro.mixer)) {
+            debugMsg("initAllegro", "al_set_default_mixer() failed");
+            return false;
+        }
+
         return true;
  
     }
 
 
-    // JavaScript API ---------------------------------------------------------
-    bool callGameMethod(const char *name, Handle<Value> *args, int argc) {
+    // V8 Helpers -------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    bool invoke(const char *name, Handle<Value> *args, int argc) {
 
         if (state.error) {
             return false;
         }
 
         // This function calls functions like game.update() and others on the JS side
+        Context::Scope contextScope(js.context);
         HandleScope scope;
         Handle<Value> object = js.game->Get(String::NewSymbol(name));
         
@@ -540,21 +648,17 @@ namespace Game {
         }
     }
 
-    Handle<Value> requireModule(string name) {
-
-        printf("Require module %s...\n", name.data());
+    Handle<Value> requireModule(std::string name) {
 
         Handle<Value> exports;
 
         ModuleMap::iterator it = moduleCache->find(name);
         if (it == moduleCache->end()) {
-            printf("Require module %s from disk\n", name.data());
-            
+            debugArgs("module::disk", "'%s' required", name.data());
             exports = executeScript(loadScript(name.data()));
-            moduleCache->insert(std::make_pair(name, exports));
+            moduleCache->insert(std::make_pair(name, Persistent<Value>::New(exports)));
 
         } else {
-            printf("Require module %s from cached\n", name.data());
             exports = it->second;
         }
 

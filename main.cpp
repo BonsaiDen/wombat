@@ -21,29 +21,16 @@
 #include <stdio.h>
 #include "src/Game.h"
 
-using namespace v8;
-
 int main(int argc, char* argv[]) {
     
     //setvbuf(stdout, NULL, _IOFBF, 8192);
-
-    // Setup V8
-    HandleScope scope;
-    Persistent<Context> context = Context::New();
-    Context::Scope contextScope(context);
-
-    int ret = 0;
-    if (Game::init(context)) {
-        if (Game::start(argc > 1 ? string(argv[1]) : "")) {
-            ret = Game::loop();
-        }
+    
+    if (Game::init(argc > 1 ? std::string(argv[1]) : "")) {
+        return Game::loop();
 
     } else {
-        ret = 1;
+        return -1;
     }
-
-    context.Dispose();
-    return ret;
 
 }
 

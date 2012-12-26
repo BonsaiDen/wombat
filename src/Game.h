@@ -23,45 +23,87 @@
 #define MAX_MOUSE 8
 #define exposeApi(obj, name, func) obj->Set(String::New(name), FunctionTemplate::New(func)->GetFunction());
 
+#define debug(id) printf("[game::" id "]\n");
+#define debugMsg(id, msg) printf("[game::" id "] " msg "\n");
+#define debugArgs(id, msg, options...) printf("[game::" id "] " msg "\n", options);
+
+
 #include <string>
 #include <map>
+#include <vector>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_memfile.h>
 #include <v8.h>
 #include "js.h"
 
-using namespace v8;
-using namespace std;
-
 // Game Namespace -------------------------------------------------------------
 namespace Game {
 
     // Type Declarations ------------------------------------------------------
+    typedef std::map<const std::string, v8::Persistent<v8::Value> > ModuleMap;
+
     struct Image;
     typedef struct Image {
+        std::string filename;
         ALLEGRO_BITMAP *bitmap;
+        bool loaded;
         int cols;
         int rows;
 
     } Image;
 
-    typedef map<const string, Image*> ImageMap;
-    typedef map<const string, Handle<Value> > ModuleMap;
+    typedef enum MUSIC_STATE {
+        MUSIC_STATE_STOPPED = 0,
+        MUSIC_STATE_PLAYING = 1,
+        MUSIC_STATE_PAUSED = 2
+        
+    } MUSIC_STATE;
 
-    // State Structs ----------------------------------------------------------
+    struct Music;
+    typedef struct Music {
+        std::string filename;
+        ALLEGRO_AUDIO_STREAM *stream;
+        bool loaded;
+        bool looping;
+        MUSIC_STATE state;
+
+    } Music;
+
+    struct Sound;
+    typedef struct Sound {
+        std::string filename;
+        ALLEGRO_SAMPLE *sample;
+        bool loaded;
+
+    } Sound;
+
+    struct Allegro;
+    typedef struct Allegro {
+        ALLEGRO_DISPLAY *display;
+        ALLEGRO_BITMAP *background;
+        ALLEGRO_EVENT_QUEUE *eventQueue;
+        ALLEGRO_TIMER *timer;
+        ALLEGRO_MIXER *mixer;
+        ALLEGRO_VOICE *voice;
+        
+    } Allegro;
+
     struct JS;
     typedef struct JS {
-        Handle<Object> global;
-        Handle<Object> game;
-        Handle<Object> console;
-        Handle<Object> keyboard;
-        Handle<Object> mouse;
-        Handle<Object> graphics;
-        Handle<Object> image;
-        Handle<Object> sound;
+        v8::Persistent<v8::Context> context;
+        v8::Persistent<v8::Object> global;
+        v8::Persistent<v8::Object> game;
+        v8::Persistent<v8::Object> console;
+        v8::Persistent<v8::Object> keyboard;
+        v8::Persistent<v8::Object> mouse;
+        v8::Persistent<v8::Object> graphics;
+        v8::Persistent<v8::Object> image;
+        v8::Persistent<v8::Object> music;
+        v8::Persistent<v8::Object> sound;
         
     } JS;        
 
@@ -70,14 +112,16 @@ namespace Game {
         bool running;
         bool paused;
         bool reload;
-        string main;
+        std::string main;
         bool error;
+
     } State;
 
     struct Time;
     typedef struct Time {
         double time;
         double delta;
+
     } Time;
 
     struct Mouse;
@@ -88,6 +132,7 @@ namespace Game {
         bool hasFocus;
         int state[MAX_MOUSE];
         int stateOld[MAX_MOUSE];
+
     } Mouse;
 
     struct Keyboard;
@@ -96,11 +141,12 @@ namespace Game {
         bool hasFocus;
         int state[ALLEGRO_KEY_MAX];
         int stateOld[ALLEGRO_KEY_MAX];
+
     } Keyboard;
 
     struct Graphics;
     typedef struct Graphics {
-        string title;
+        std::string title;
         int width;
         int height;
         int scale;
@@ -118,80 +164,89 @@ namespace Game {
 
     struct Templates;
     typedef struct Templates {
-        Handle<ObjectTemplate> position;
-        Handle<ObjectTemplate> size;
-        Handle<ObjectTemplate> color;
+        v8::Persistent<v8::ObjectTemplate> position;
+        v8::Persistent<v8::ObjectTemplate> size;
+        v8::Persistent<v8::ObjectTemplate> color;
         
     } Templates;
+
+    typedef std::map<const std::string, Image*> ImageMap;
+    typedef std::map<const std::string, Music*> MusicMap;
+    typedef std::map<const std::string, Sound*> SoundMap;
 
 
     // V8 ---------------------------------------------------------------------
     extern struct Templates templates;
     extern ModuleMap *moduleCache;
 
-    // General Allegro state
-    extern ALLEGRO_DISPLAY *display;
-    extern ALLEGRO_BITMAP *background;
-    extern ALLEGRO_EVENT_QUEUE *eventQueue;
-    extern ALLEGRO_TIMER *timer;
-
     // State
+    extern struct Allegro allegro;
     extern struct JS js;
     extern struct State state;
     extern struct Time time;
     extern struct Mouse mouse;
     extern struct Keyboard keyboard;
     extern struct Graphics graphics;
+
     extern ImageMap *images;
+    extern MusicMap *musics;
+    extern SoundMap *sounds;
 
 
     // Methods ----------------------------------------------------------------
-    bool init(Persistent<Context> context);
-    bool start(string filename);
+    bool init(std::string filename);
+    void setup();
     void reset();
     int loop();
+    void exit();
 
-    void initV8(Persistent<Context> context);
-    void initAPI();
     bool initAllegro();
     bool initJS();
 
-    inline void dump(const char* msg) {
-        printf("%s\n", msg);
-    }
-
-    bool callGameMethod(const char *name, Handle<Value> *args, int argc);
-    Handle<Value> require(const Arguments& args);
-    Handle<Value> requireModule(string module);
+    bool invoke(const char *name, v8::Handle<v8::Value> *args, int argc);
+    v8::Handle<v8::Value> require(const v8::Arguments& args);
+    v8::Handle<v8::Value> requireModule(std::string module);
 
 
     // JavaScript API ---------------------------------------------------------
     namespace api {
             
-        Handle<Value> require(const Arguments& args);
+        v8::Handle<v8::Value> require(const v8::Arguments& args);
 
         namespace console {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
         }
 
         namespace game {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
         }
 
         namespace keyboard {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
         }
 
         namespace mouse {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
         }
 
         namespace graphics {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
         }
 
         namespace image {
-            void init(Handle<Object> object);
+            void init(v8::Handle<v8::Object> object);
+        }
+
+        namespace sound {
+            void init(v8::Handle<v8::Object> object);
+            void update(double time, double dt);
+            void exit();
+        }
+
+        namespace music {
+            void init(v8::Handle<v8::Object> object);
+            void update(double time, double dt);
+            void exit();
         }
 
     }
@@ -200,11 +255,19 @@ namespace Game {
     namespace io {
 
         namespace file {
-            ALLEGRO_FILE *open(string filename);
+            ALLEGRO_FILE *open(std::string filename);
         }
 
         namespace image {
-            ALLEGRO_BITMAP *open(string filename);
+            ALLEGRO_BITMAP *open(std::string filename);
+        }
+
+        namespace sample {
+            ALLEGRO_SAMPLE *open(std::string filename);
+        }
+
+        namespace stream {
+            ALLEGRO_AUDIO_STREAM *open(std::string filename);
         }
 
     }

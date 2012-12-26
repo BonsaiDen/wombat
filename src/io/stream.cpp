@@ -18,50 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 #include "../Game.h"
-#include <fstream>
 
-namespace Game { namespace io { namespace file {
+namespace Game { namespace io { namespace stream {
 
-    char *loadResource(std::string filename, unsigned int *bufSize) {
+    ALLEGRO_AUDIO_STREAM *open(std::string filename) {
+
+        debugArgs("io::stream", "Loading '%s'...", filename.data());
+
+        ALLEGRO_AUDIO_STREAM *stream = NULL;
+        ALLEGRO_FILE *file  = file::open(filename);
+
+        if (file != NULL) {
+            std::string ext = filename.substr(filename.find_last_of("."));
+            stream = al_load_audio_stream_f(file, ext.data(), 1024, 64);
+        } 
         
-        std::ifstream scriptFile;
-        scriptFile.open(filename.data(), std::ifstream::in);
-
-        if (scriptFile.is_open()) {
-
-            scriptFile.seekg(0, std::ios::end);
-            std::ifstream::pos_type size = scriptFile.tellg();
-            
-            char *data = new char[size];
-            scriptFile.seekg(0, std::ios::beg);
-            scriptFile.read(data, size);
-            scriptFile.close();
-
-            *bufSize = size;
-            return data;
+        if (stream) {
+            debugArgs("io::stream", "Loaded '%s'", filename.data());
 
         } else {
-            *bufSize = -1;
-            return NULL;
+            debugArgs("io::stream", "Failed to load '%s'", filename.data());
         }
 
-    }
-
-    ALLEGRO_FILE *open(std::string filename) {
-
-        debugArgs("io::file", "Loading '%s'...", filename.data());
-
-        unsigned int len;
-        char *buf = loadResource(filename, &len);
-
-        if (buf == NULL) {
-            debugArgs("io::file", "Failed to load '%s'", filename.data());
-            return NULL;
-
-        } else {
-            debugArgs("io::file", "Loaded '%s', %d bytes", filename.data(), len);
-            return al_open_memfile(buf, len, "r");
-        }
+        return stream;
 
     }
 

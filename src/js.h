@@ -23,27 +23,28 @@
 #include <v8.h>
 #include <string>
 
-using namespace v8;
-using namespace std;
+v8::Handle<v8::Script> loadScript(const char *name);
+v8::Handle<v8::Value> requireScript(const v8::Arguments& args);
+v8::Handle<v8::Value> executeScript(v8::Handle<v8::Script> script);
+v8::Persistent<v8::Object> JSObject();
 
-Handle<Script> loadScript(const char *name);
-Handle<Value> requireScript(const Arguments& args);
-Handle<Value> executeScript(Handle<Script> script);
-Handle<Object> JSObject();
+void handleException(v8::TryCatch tryCatch);
 
-void handleException(TryCatch tryCatch);
-
-inline int ToInt32(Handle<Value> i) {
+inline int ToInt32(v8::Handle<v8::Value> i) {
     return i->Int32Value();
 }
 
-inline float ToFloat(Handle<Value> f) {
+inline float ToFloat(v8::Handle<v8::Value> f) {
     return static_cast<float>(f->NumberValue());
 }
 
-inline string ToString(Handle<Value> f) {
-    String::Utf8Value raw(f->ToString());
-    return string(*raw);
+inline float ToBoolean(v8::Handle<v8::Value> f) {
+    return f->BooleanValue();
+}
+
+inline std::string ToString(v8::Handle<v8::Value> f) {
+    v8::String::Utf8Value raw(f->ToString());
+    return std::string(*raw);
 }
 
 #endif

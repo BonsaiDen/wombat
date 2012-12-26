@@ -1,0 +1,186 @@
+// Copyright (c) 2012 Ivo Wetzel.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+#include "../Game.h"
+
+using namespace v8;
+namespace Game { namespace api { namespace sound {
+
+    Sound* getSound(std::string filename) {
+        
+        // Check if we need to load the sound
+        SoundMap::iterator it = sounds->find(filename);
+        if (it == sounds->end()) {
+            
+            Sound *sound = new Sound();
+            sound->filename = filename;
+            sound->sample = io::sample::open(filename);
+            sound->loaded = sound->sample != NULL;
+            sounds->insert(std::make_pair(filename, sound));
+
+            return sound;
+
+        } else {
+            return it->second;
+        }
+
+    }
+
+    #define mapSound(a, m) \
+        if (a.Length() > 0) { \
+            m = getSound(ToString(a[0])); \
+            if (!m->loaded) { \
+                m = NULL; \
+            } \
+        } \
+    
+
+    // Manage Sample instances ------------------------------------------------
+    typedef std::vector<ALLEGRO_SAMPLE_INSTANCE*> SampleList;
+    SampleList *instances;
+
+    ALLEGRO_SAMPLE_INSTANCE *getInstanceForSample(Sound *sound) {
+
+        // Find a available sample instance
+        ALLEGRO_SAMPLE_INSTANCE *sampleInstance = NULL;
+        for(SampleList::iterator it = instances->begin(); it != instances->end(); it++) {
+
+            ALLEGRO_SAMPLE_INSTANCE *instance = *it;
+
+            // If the instance is not attached it's available
+            if (!al_get_sample_instance_attached(instance)) {
+
+                debugArgs("api::sound", "Re-use sample instance for '%s'", sound->filename.data());
+                sampleInstance = instance;
+                al_set_sample(sampleInstance, sound->sample);
+                al_attach_sample_instance_to_mixer(instance, al_get_default_mixer());
+                break;
+
+            }
+
+        }
+
+        // Create a new one if we're under the limit and no other is free
+        if (sampleInstance == NULL) {
+
+            debugArgs("api::sound", "Create sample instance for '%s'", sound->filename.data());
+            sampleInstance = al_create_sample_instance(sound->sample);
+            al_attach_sample_instance_to_mixer(sampleInstance, al_get_default_mixer());
+            instances->push_back(sampleInstance);
+
+        }
+        
+        return sampleInstance;
+
+    }
+
+
+    // API --------------------------------------------------------------------
+    Handle<Value> load(const Arguments& args) {
+
+        Sound *sound;
+        mapSound(args, sound);
+        if (sound) {
+            return v8::True();
+        } 
+
+        return v8::False();
+
+    }
+
+    Handle<Value> play(const Arguments& args) {
+
+        Sound *sound;
+        mapSound(args, sound);
+
+        if (sound && sound->loaded) {
+
+            ALLEGRO_SAMPLE_INSTANCE *instance = getInstanceForSample(sound);
+            if (instance) {
+
+                // TODO setup sound configuration
+                debugArgs("api::sound", "Play sound '%s'", sound->filename.data()); // TODO log name, volume, pan, speed
+                al_set_sample_instance_playing(instance, true);
+                //al_set_sample_instance_gain(instance, 1.0f);
+                
+                return True();
+
+            } else {
+                return False();
+            }
+            
+        } else {
+            return False();
+        }
+
+    }
+
+    Handle<Value> setPan(const Arguments& args) {
+        return Undefined();
+    }
+
+    Handle<Value> setVolume(const Arguments& args) {
+        return Undefined();
+    }
+
+    Handle<Value> setSpeed(const Arguments& args) {
+        return Undefined();
+    }
+
+    // Export -----------------------------------------------------------------
+    void init(Handle<Object> object) {
+
+        instances = new SampleList();
+        exposeApi(object, "load", load);
+        exposeApi(object, "play", play);
+
+    }
+
+    void update(double time, double dt) {
+        
+        for(SampleList::iterator it = instances->begin(); it != instances->end(); it++) {
+
+            ALLEGRO_SAMPLE_INSTANCE *instance = *it;
+
+            // Check for the instance having finished playing and detach it
+            // this marks it as avaialble
+            if (al_get_sample_instance_attached(instance)) {
+                if (!al_get_sample_instance_playing(instance)) {
+                    debugArgs("api::sound", "Done sample instance for '%s'", "unkown");
+                    //printf("[api::sound] Sample instance finished playing\n");
+                    al_detach_sample_instance(instance);
+                }
+            }
+
+        }
+
+    }
+
+    void exit() {
+
+        for(SampleList::iterator it = instances->begin(); it != instances->end(); it++) {
+            debugMsg("api::sound", "Destroyed sample instance");
+            al_destroy_sample_instance(*it);
+        }
+        instances->clear();
+
+    }
+
+}}}
+

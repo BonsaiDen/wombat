@@ -26,9 +26,8 @@
 using namespace v8;
 using namespace std;
 
-Handle<Object> JSObject() {
-    HandleScope scope;
-    return scope.Close(Persistent<Object>::New(ObjectTemplate::New()->NewInstance()));
+Persistent<Object> JSObject() {
+    return Persistent<Object>::New(ObjectTemplate::New()->NewInstance());
 }
 
 Handle<Value> requireScript(const Arguments& args) {

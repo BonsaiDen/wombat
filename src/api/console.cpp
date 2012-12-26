@@ -25,8 +25,13 @@ namespace Game { namespace api { namespace console {
     // API --------------------------------------------------------------------
     Handle<Value> log(const Arguments& args) {
 
+        HandleScope scope;
+        Local<Function> callee = args.Callee();
+          
         bool first = true;
-        for (int i = 0; i < args.Length(); i++) {
+
+        printf("[console::log] ");
+        for(int i = 0; i < args.Length(); i++) {
 
             if (first) {
                 first = false;
