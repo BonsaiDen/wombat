@@ -17,40 +17,39 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+#include "js.h"
+
 #include <v8.h>
 #include <fstream>
 #include <string>
 #include <stdio.h>
-#include "js.h"
 
-using namespace v8;
-
-Persistent<Object> JSObject() {
-    return Persistent<Object>::New(ObjectTemplate::New()->NewInstance());
+v8::Persistent<v8::Object> JSObject() {
+    return v8::Persistent<v8::Object>::New(v8::ObjectTemplate::New()->NewInstance());
 }
 
-Handle<Value> requireScript(const Arguments& args) {
+v8::Handle<v8::Value> requireScript(const v8::Arguments& args) {
 
-    HandleScope scope;
+    v8::HandleScope scope;
     if (args.Length() == 1) {
-        String::Utf8Value name(args[0]->ToString());
+        v8::String::Utf8Value name(args[0]->ToString());
         return scope.Close(executeScript(loadScript(*name)));
     
     } else {
-        return Undefined();
+        return v8::Undefined();
     }
 
 }
 
-Handle<Value> executeScript(Handle<Script> script) {
+v8::Handle<v8::Value> executeScript(v8::Handle<v8::Script> script) {
 
-    HandleScope scope;
-    TryCatch tryCatch;
-    Handle<Value> result = script->Run();
+    v8::HandleScope scope;
+    v8::TryCatch tryCatch;
+    v8::Handle<v8::Value> result = script->Run();
 
     if (result.IsEmpty()) {
         handleException(tryCatch);
-        return Undefined();
+        return v8::Undefined();
     
     } else {
         return scope.Close(result);
@@ -58,17 +57,17 @@ Handle<Value> executeScript(Handle<Script> script) {
 
 }
 
-Handle<Script> loadScript(const char *name) {
+v8::Handle<v8::Script> loadScript(const char *name) {
     
     // Create filename
     std::string filename(name);
     filename.append(".js");
     
     // Handles
-    HandleScope scope;
-    Handle<Script> script;
-    Handle<String> source;
-    TryCatch tryCatch;
+    v8::HandleScope scope;
+    v8::Handle<v8::Script> script;
+    v8::Handle<v8::String> source;
+    v8::TryCatch tryCatch;
     
     // Load File
     std::ifstream scriptFile;
@@ -82,49 +81,49 @@ Handle<Script> loadScript(const char *name) {
         scriptFile.seekg(0, std::ios::beg);
         scriptFile.read(data, size);
         scriptFile.close();
-        source = String::New(data, size);
+        source = v8::String::New(data, size);
         delete[] data;
     
     } else {
         printf("Error: Failed to load module \"%s\"\n", name);
-        script = Script::Compile(String::New("undefined"), String::New(filename.data()));
+        script = v8::Script::Compile(v8::String::New("undefined"), v8::String::New(filename.data()));
         return scope.Close(script);
     }
     
     // Wrap it in a Node.js compatible way
-    Handle<String> pre = String::New("(function() { var module = { exports: {} }; (function(exports, module, global) {\n");
-    Handle<String> end = String::New("\n})(module.exports, module, this); return module; })();");
-    Handle<String> wrapped = String::Concat(String::Concat(pre, source), end);
+    v8::Handle<v8::String> pre = v8::String::New("(function() { var module = { exports: {} }; (function(exports, module, global) {\n");
+    v8::Handle<v8::String> end = v8::String::New("\n})(module.exports, module, this); return module; })();");
+    v8::Handle<v8::String> wrapped = v8::String::Concat(v8::String::Concat(pre, source), end);
 
-    script = Script::Compile(wrapped, String::New(filename.data()));
+    script = v8::Script::Compile(wrapped, v8::String::New(filename.data()));
     if (script.IsEmpty()) {
         printf("Error: Could not load module \"%s\"\n", name);
         handleException(tryCatch);
-        script = Script::Compile(String::New("undefined"), String::New(filename.data()));
+        script = v8::Script::Compile(v8::String::New("undefined"), v8::String::New(filename.data()));
     }
 
     return scope.Close(script);
 
 }
 
-void handleException(TryCatch tryCatch) {
+void handleException(v8::TryCatch tryCatch) {
 
-    HandleScope scope;
-    String::Utf8Value exception(tryCatch.Exception());
+    v8::HandleScope scope;
+    v8::String::Utf8Value exception(tryCatch.Exception());
 
-    Handle<Message> message = tryCatch.Message();
+    v8::Handle<v8::Message> message = tryCatch.Message();
     if (message.IsEmpty()) {
         printf("%s\n", *exception);
     
     } else {
     
         // Filename, line, message
-        String::Utf8Value filename(message->GetScriptResourceName());
+        v8::String::Utf8Value filename(message->GetScriptResourceName());
         int line = message->GetLineNumber();
         printf("\nError at %s:%i:\n  %s\n", *filename, line - 1, *exception); // -1 for the wrapper
         
         // Sourceline
-        String::Utf8Value sourceLine(message->GetSourceLine());
+        v8::String::Utf8Value sourceLine(message->GetSourceLine());
         printf("\nSource:\n  %s\n", *sourceLine);
         
         int start = message->GetStartColumn(), end = message->GetEndColumn();
@@ -137,9 +136,9 @@ void handleException(TryCatch tryCatch) {
         printf("\n");
         
         // Stack Trace
-        //String::Utf8Value stackTrace(tryCatch.StackTrace());
-        //if (stackTrace.length() > 0) {
-            //printf("%s\n", *stackTrace);
+        //String::Utf8Value stacktrace(TryCatch.StackTrace());
+        //if (stacktrace.length() > 0) {
+            //printf("%s\n", *stacktrace);
         //}
         
     }

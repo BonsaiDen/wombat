@@ -153,15 +153,15 @@ namespace Game { namespace api { namespace image {
         int tx = index - ty * img->cols;
 
         int flags = 0;
-        if (args.Length() > 5 && args[4]->BooleanValue() == true) {
+        if (args.Length() > 4 && args[4]->BooleanValue() == true) {
             flags |= ALLEGRO_FLIP_HORIZONTAL;
         }
 
-        if (args.Length() > 6 && args[5]->BooleanValue() == true) {
+        if (args.Length() > 5 && args[5]->BooleanValue() == true) {
             flags |= ALLEGRO_FLIP_VERTICAL;
         }
 
-        double a = args.Length() > 7 ? ToFloat(args[6]) : 1;
+        double a = args.Length() > 6 ? ToFloat(args[6]) : 1;
         if (a == 1) {
             al_draw_bitmap_region(img->bitmap, tx * w, ty * h, w, h, x, y, flags);
 
