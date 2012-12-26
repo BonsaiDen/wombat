@@ -20,6 +20,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdio.h>
+
 #define MAX_MOUSE 8
 
 #define setFunctionProp(obj, name, func) obj->Set(String::NewSymbol(name), FunctionTemplate::New(func)->GetFunction());
@@ -49,8 +51,7 @@ namespace Game {
     // Type Declarations ------------------------------------------------------
     typedef std::map<const std::string, v8::Persistent<v8::Value> > ModuleMap;
 
-    struct Allegro;
-    typedef struct Allegro {
+    typedef struct {
         ALLEGRO_DISPLAY *display;
         ALLEGRO_BITMAP *background;
         ALLEGRO_EVENT_QUEUE *eventQueue;
@@ -60,8 +61,7 @@ namespace Game {
         
     } Allegro;
 
-    struct JS;
-    typedef struct JS {
+    typedef struct {
         v8::Persistent<v8::Context> context;
         v8::Persistent<v8::Object> global;
         v8::Persistent<v8::Object> game;
@@ -75,8 +75,7 @@ namespace Game {
         
     } JS;        
 
-    struct State;
-    typedef struct State {
+    typedef struct {
         bool running;
         bool paused;
         bool reload;
@@ -85,15 +84,13 @@ namespace Game {
 
     } State;
 
-    struct Time;
-    typedef struct Time {
+    typedef struct {
         double time;
         double delta;
 
     } Time;
 
-    struct Mouse;
-    typedef struct Mouse {
+    typedef struct {
         int x;
         int y;
         int pressedCount;
@@ -103,8 +100,7 @@ namespace Game {
 
     } Mouse;
 
-    struct Keyboard;
-    typedef struct Keyboard {
+    typedef struct {
         int pressedCount;
         bool hasFocus;
         int state[ALLEGRO_KEY_MAX];
@@ -112,8 +108,7 @@ namespace Game {
 
     } Keyboard;
 
-    struct Graphics;
-    typedef struct Graphics {
+    typedef struct {
         std::string title;
         int width;
         int height;
@@ -130,8 +125,7 @@ namespace Game {
 
     } Graphics;
 
-    struct Templates;
-    typedef struct Templates {
+    typedef struct {
         v8::Persistent<v8::ObjectTemplate> position;
         v8::Persistent<v8::ObjectTemplate> size;
         v8::Persistent<v8::ObjectTemplate> color;
@@ -140,21 +134,21 @@ namespace Game {
 
 
     // V8 ---------------------------------------------------------------------
-    extern struct Templates templates;
+    extern Templates templates;
     extern ModuleMap *moduleCache;
 
     // State
-    extern struct Allegro allegro;
-    extern struct JS js;
-    extern struct State state;
-    extern struct Time time;
-    extern struct Mouse mouse;
-    extern struct Keyboard keyboard;
-    extern struct Graphics graphics;
+    extern Allegro allegro;
+    extern JS js;
+    extern State state;
+    extern Time time;
+    extern Mouse mouse;
+    extern Keyboard keyboard;
+    extern Graphics graphics;
 
 
     // Methods ----------------------------------------------------------------
-    bool init(std::string filename);
+    bool init(const std::string filename);
     void setup();
     void reset();
     int loop();

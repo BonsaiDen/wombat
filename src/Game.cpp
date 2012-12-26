@@ -25,21 +25,21 @@ using namespace v8;
 namespace Game {
 
     // V8
-    struct Templates templates;
+    Templates templates;
     ModuleMap *moduleCache;
 
     // State
-    struct Allegro allegro;
-    struct JS js;
-    struct State state;
-    struct Time time;
-    struct Mouse mouse;
-    struct Keyboard keyboard;
-    struct Graphics graphics;
+    Allegro allegro;
+    JS js;
+    State state;
+    Time time;
+    Mouse mouse;
+    Keyboard keyboard;
+    Graphics graphics;
 
     // Methods ----------------------------------------------------------------
     // ------------------------------------------------------------------------
-    bool init(std::string filename) {
+    bool init(const std::string filename) {
 
         debug("init");
         setup();
@@ -329,6 +329,7 @@ namespace Game {
                     
                     // Handle hot code reloading
                     if (state.reload) {
+                        debugMsg("loop", "Reload modules...");
                         redraw = false;
                         state.reload = false;
                         reset();
@@ -346,6 +347,7 @@ namespace Game {
                 // Handle resizing
                 if (graphics.wasResized) {
 
+                    debugMsg("loop", "Resize display...");
                     al_resize_display(allegro.display, graphics.width * graphics.scale, graphics.height * graphics.scale);
 
                     if (allegro.background != NULL) {
@@ -580,7 +582,6 @@ namespace Game {
             return false;
         }
 
-        // This function calls functions like game.update() and others on the JS side
         Context::Scope contextScope(js.context);
         HandleScope scope;
         Handle<Value> object = js.game->Get(String::NewSymbol(name));
@@ -617,6 +618,7 @@ namespace Game {
 
     Handle<Value> requireModule(std::string name) {
 
+        HandleScope scope;
         Handle<Value> exports;
 
         ModuleMap::iterator it = moduleCache->find(name);
@@ -631,7 +633,7 @@ namespace Game {
             exports = it->second;
         }
 
-        return exports;
+        return scope.Close(exports);
 
     }
 
