@@ -24,7 +24,6 @@
 #include "js.h"
 
 using namespace v8;
-using namespace std;
 
 Persistent<Object> JSObject() {
     return Persistent<Object>::New(ObjectTemplate::New()->NewInstance());
@@ -62,7 +61,7 @@ Handle<Value> executeScript(Handle<Script> script) {
 Handle<Script> loadScript(const char *name) {
     
     // Create filename
-    string filename(name);
+    std::string filename(name);
     filename.append(".js");
     
     // Handles
@@ -72,15 +71,15 @@ Handle<Script> loadScript(const char *name) {
     TryCatch tryCatch;
     
     // Load File
-    ifstream scriptFile;
-    scriptFile.open(filename.data(), ifstream::in);
+    std::ifstream scriptFile;
+    scriptFile.open(filename.data(), std::ifstream::in);
 
     if (scriptFile.is_open()) {
-        scriptFile.seekg(0, ios::end);
-        ifstream::pos_type size = scriptFile.tellg();
+        scriptFile.seekg(0, std::ios::end);
+        std::ifstream::pos_type size = scriptFile.tellg();
         
         char *data = new char[size];
-        scriptFile.seekg(0, ios::beg);
+        scriptFile.seekg(0, std::ios::beg);
         scriptFile.read(data, size);
         scriptFile.close();
         source = String::New(data, size);
@@ -93,8 +92,8 @@ Handle<Script> loadScript(const char *name) {
     }
     
     // Wrap it in a Node.js compatible way
-    Handle<String> pre = String::New("(function() {var exports = {}; (function(exports, global) {\n");
-    Handle<String> end = String::New("\n})(exports, this); return exports;})();");
+    Handle<String> pre = String::New("(function() { var module = { exports: {} }; (function(exports, module, global) {\n");
+    Handle<String> end = String::New("\n})(module.exports, module, this); return module; })();");
     Handle<String> wrapped = String::Concat(String::Concat(pre, source), end);
 
     script = Script::Compile(wrapped, String::New(filename.data()));

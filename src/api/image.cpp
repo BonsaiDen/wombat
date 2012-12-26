@@ -22,9 +22,24 @@
 using namespace v8;
 namespace Game { namespace api { namespace image {
 
+    // Structs ----------------------------------------------------------------
+    struct Image;
+    typedef struct Image {
+        std::string filename;
+        ALLEGRO_BITMAP *bitmap;
+        bool loaded;
+        int cols;
+        int rows;
+
+    } Image;
+
+    typedef std::map<const std::string, Image*> ImageMap;
+
+
+    // Loader -----------------------------------------------------------------
+    ImageMap *images;
     Image* getImage(std::string filename, const int cols, const int rows) {
         
-        // Check if we need to load the image
         ImageMap::iterator it = images->find(filename);
         if (it == images->end()) {
             
@@ -58,12 +73,12 @@ namespace Game { namespace api { namespace image {
             }
 
             if (getImage(ToString(args[0]), rows, cols)->loaded) {   
-                return v8::True();
+                return True();
             }
 
         } 
 
-        return v8::False();
+        return False();
 
     }
 
@@ -164,10 +179,30 @@ namespace Game { namespace api { namespace image {
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
 
-        exposeApi(object, "load", load);
-        exposeApi(object, "draw", draw);
-        exposeApi(object, "drawTiled", drawTiled);
-        exposeApi(object, "setTiled", setTiled);
+        images = new ImageMap();
+
+        setFunctionProp(object, "load", load);
+        setFunctionProp(object, "draw", draw);
+        setFunctionProp(object, "drawTiled", drawTiled);
+        setFunctionProp(object, "setTiled", setTiled);
+
+    }
+
+    void shutdown() {
+        
+        debugMsg("api::image", "Shutdown...");
+        for(ImageMap::iterator it = images->begin(); it != images->end(); it++) {
+            Image *img = it->second;
+            if (img->bitmap) {
+                debugArgs("api::image::bitmap", "Destroyed '%s'", img->filename.data());
+                al_destroy_bitmap(img->bitmap);
+            }
+            debugArgs("api::image", "Destroyed '%s'", img->filename.data());
+            delete img;
+        }
+
+        images->clear();
+        delete images;
 
     }
 

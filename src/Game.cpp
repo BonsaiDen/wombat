@@ -37,10 +37,6 @@ namespace Game {
     struct Keyboard keyboard;
     struct Graphics graphics;
 
-    ImageMap *images;
-    SoundMap *sounds;
-    MusicMap *musics;
-
     // Methods ----------------------------------------------------------------
     // ------------------------------------------------------------------------
     bool init(std::string filename) {
@@ -111,18 +107,18 @@ namespace Game {
 
         // Initiate Object Templates
         templates.position = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
-        templates.position->Set(String::New("x"), Number::New(0));
-        templates.position->Set(String::New("y"), Number::New(0));
+        setNumberProp(templates.position, "x", 0);
+        setNumberProp(templates.position, "y", 0);
 
         templates.size = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
-        templates.size->Set(String::New("w"), Number::New(0));
-        templates.size->Set(String::New("h"), Number::New(0));
+        setNumberProp(templates.size, "w", 0);
+        setNumberProp(templates.size, "h", 0);
 
         templates.color = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
-        templates.color->Set(String::New("r"), Number::New(1));
-        templates.color->Set(String::New("g"), Number::New(1));
-        templates.color->Set(String::New("b"), Number::New(1));
-        templates.color->Set(String::New("a"), Number::New(1));
+        setNumberProp(templates.color, "r", 1);
+        setNumberProp(templates.color, "g", 1);
+        setNumberProp(templates.color, "b", 1);
+        setNumberProp(templates.color, "a", 1);
 
         // Initiate Script Cache for require
         api::game::init(js.game);
@@ -135,15 +131,15 @@ namespace Game {
         api::sound::init(js.sound);
 
         // Expose mapped API to JavaScript
-        js.global->Set(String::New("console"), js.console);
-        js.global->Set(String::New("game"), js.game);
-        js.global->Set(String::New("keyboard"), js.keyboard);
-        js.global->Set(String::New("mouse"), js.mouse);
-        js.global->Set(String::New("graphics"), js.graphics);
-        js.global->Set(String::New("image"), js.image);
-        js.global->Set(String::New("music"), js.music);
-        js.global->Set(String::New("sound"), js.sound);
-        exposeApi(js.global, "require", require);
+        setProp(js.global, "console", js.console);
+        setProp(js.global, "game", js.game);
+        setProp(js.global, "keyboard", js.keyboard);
+        setProp(js.global, "mouse", js.mouse);
+        setProp(js.global, "graphics", js.graphics);
+        setProp(js.global, "image", js.image);
+        setProp(js.global, "music", js.music);
+        setProp(js.global, "sound", js.sound);
+        setFunctionProp(js.global, "require", require);
 
 
         // Game State Specific ------------------------------------------------
@@ -186,9 +182,6 @@ namespace Game {
         graphics.offsetY = 0;
 
         // Resources
-        images = new ImageMap();
-        sounds = new SoundMap();
-        musics = new MusicMap();
         moduleCache = new ModuleMap();
 
     }
@@ -402,36 +395,8 @@ namespace Game {
 
     void exit() {
 
-        // Remove images ------------------------------------------------------
-        debugMsg("cleanup", "Images");
-        for(ImageMap::iterator it = images->begin(); it != images->end(); it++) {
-            Image *img = it->second;
-            if (img->bitmap) {
-                debugArgs("cleanup::bitmap", "destroyed '%s'", img->filename.data());
-                al_destroy_bitmap(img->bitmap);
-            }
-            debugArgs("cleanup::image", "destroyed '%s'", img->filename.data());
-            delete img;
-        }
-        images->clear();
-
-        // Remove sounds ------------------------------------------------------
-        debugMsg("cleanup", "Sounds");
-        for(SoundMap::iterator it = sounds->begin(); it != sounds->end(); it++) {
-            Sound *snd = it->second;
-            if (snd->sample) {
-                debugArgs("cleanup::sample", "destroyed '%s'", snd->filename.data());
-                al_destroy_sample(snd->sample);
-            }
-            debugArgs("cleanup::sound", "destroyed '%s'", snd->filename.data());
-            delete snd;
-        }
-        sounds->clear();
-
-        // TODO remove musics
-
         // Clean up allegro ---------------------------------------------------
-        debugMsg("cleanup", "Allegro");
+        debugMsg("exit", "Destroy Allegro");
         if (allegro.mixer) {
             al_destroy_mixer(allegro.mixer);
         }
@@ -449,18 +414,20 @@ namespace Game {
         }
         
         // Remove cached modules
-        debugMsg("cleanup", "Modules");
+        debugMsg("exit", "Destroy Modules");
         for(ModuleMap::iterator it = moduleCache->begin(); it != moduleCache->end(); it++) {
             it->second.Dispose();
             it->second.Clear();
         }
         moduleCache->clear();
 
-        api::music::exit();
-        api::sound::exit();
+        debugMsg("exit", "Shutdown APIs");
+        api::image::shutdown();
+        api::music::shutdown();
+        api::sound::shutdown();
 
         // Cleanup APIs
-        debugMsg("cleanup", "JS");
+        debugMsg("exit", "Destroy JS");
         js.game.Dispose();
         js.console.Dispose();
         js.keyboard.Dispose();
@@ -655,7 +622,9 @@ namespace Game {
         ModuleMap::iterator it = moduleCache->find(name);
         if (it == moduleCache->end()) {
             debugArgs("module::disk", "'%s' required", name.data());
-            exports = executeScript(loadScript(name.data()));
+
+            Handle<Object> module = Handle<Object>::Cast(executeScript(loadScript(name.data())));
+            exports = module->Get(String::New("exports"));
             moduleCache->insert(std::make_pair(name, Persistent<Value>::New(exports)));
 
         } else {

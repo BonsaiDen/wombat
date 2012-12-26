@@ -21,7 +21,10 @@
 #define GAME_H
 
 #define MAX_MOUSE 8
-#define exposeApi(obj, name, func) obj->Set(String::New(name), FunctionTemplate::New(func)->GetFunction());
+
+#define setFunctionProp(obj, name, func) obj->Set(String::NewSymbol(name), FunctionTemplate::New(func)->GetFunction());
+#define setNumberProp(obj, name, num) obj->Set(String::NewSymbol(name), Number::New(num));
+#define setProp(obj, name, val) obj->Set(String::NewSymbol(name), val);
 
 #define debug(id) printf("[game::" id "]\n");
 #define debugMsg(id, msg) printf("[game::" id "] " msg "\n");
@@ -45,41 +48,6 @@ namespace Game {
 
     // Type Declarations ------------------------------------------------------
     typedef std::map<const std::string, v8::Persistent<v8::Value> > ModuleMap;
-
-    struct Image;
-    typedef struct Image {
-        std::string filename;
-        ALLEGRO_BITMAP *bitmap;
-        bool loaded;
-        int cols;
-        int rows;
-
-    } Image;
-
-    typedef enum MUSIC_STATE {
-        MUSIC_STATE_STOPPED = 0,
-        MUSIC_STATE_PLAYING = 1,
-        MUSIC_STATE_PAUSED = 2
-        
-    } MUSIC_STATE;
-
-    struct Music;
-    typedef struct Music {
-        std::string filename;
-        ALLEGRO_AUDIO_STREAM *stream;
-        bool loaded;
-        bool looping;
-        MUSIC_STATE state;
-
-    } Music;
-
-    struct Sound;
-    typedef struct Sound {
-        std::string filename;
-        ALLEGRO_SAMPLE *sample;
-        bool loaded;
-
-    } Sound;
 
     struct Allegro;
     typedef struct Allegro {
@@ -170,10 +138,6 @@ namespace Game {
         
     } Templates;
 
-    typedef std::map<const std::string, Image*> ImageMap;
-    typedef std::map<const std::string, Music*> MusicMap;
-    typedef std::map<const std::string, Sound*> SoundMap;
-
 
     // V8 ---------------------------------------------------------------------
     extern struct Templates templates;
@@ -187,10 +151,6 @@ namespace Game {
     extern struct Mouse mouse;
     extern struct Keyboard keyboard;
     extern struct Graphics graphics;
-
-    extern ImageMap *images;
-    extern MusicMap *musics;
-    extern SoundMap *sounds;
 
 
     // Methods ----------------------------------------------------------------
@@ -235,18 +195,19 @@ namespace Game {
 
         namespace image {
             void init(v8::Handle<v8::Object> object);
+            void shutdown();
         }
 
         namespace sound {
             void init(v8::Handle<v8::Object> object);
             void update(double time, double dt);
-            void exit();
+            void shutdown();
         }
 
         namespace music {
             void init(v8::Handle<v8::Object> object);
             void update(double time, double dt);
-            void exit();
+            void shutdown();
         }
 
     }

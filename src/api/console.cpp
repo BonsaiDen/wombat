@@ -53,7 +53,7 @@ namespace Game { namespace api { namespace console {
 
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
-        exposeApi(object, "log", log);
+        setFunctionProp(object, "log", log);
     }
 
 }}}

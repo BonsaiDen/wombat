@@ -146,11 +146,11 @@ namespace Game { namespace api { namespace keyboard {
             object->Set(String::New(names[i]), Number::New(i));
         }
 
-        exposeApi(object, "isDown", isDown);
-        exposeApi(object, "wasPressed", wasPressed);
-        exposeApi(object, "wasReleased", wasReleased);
-        exposeApi(object, "hasFocus", hasFocus);
-        exposeApi(object, "getCount", getCount);
+        setFunctionProp(object, "isDown", isDown);
+        setFunctionProp(object, "wasPressed", wasPressed);
+        setFunctionProp(object, "wasReleased", wasReleased);
+        setFunctionProp(object, "hasFocus", hasFocus);
+        setFunctionProp(object, "getCount", getCount);
 
     }
 

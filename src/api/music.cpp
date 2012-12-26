@@ -22,6 +22,55 @@
 using namespace v8;
 namespace Game { namespace api { namespace music {
 
+    // Structs ----------------------------------------------------------------
+    typedef enum MUSIC_STATE {
+        MUSIC_STATE_STOPPED = 0,
+        MUSIC_STATE_PLAYING = 1,
+        MUSIC_STATE_PAUSED = 2
+        
+    } MUSIC_STATE;
+
+    struct Music;
+    typedef struct Music {
+        std::string filename;
+        ALLEGRO_AUDIO_STREAM *stream;
+        bool loaded;
+        bool looping;
+        MUSIC_STATE state;
+
+    } Music;
+
+    typedef std::map<const std::string, Music*> MusicMap;
+
+
+    // Macros -----------------------------------------------------------------
+    #define mapMusic(a, m) \
+        if (a.Length() > 0) { \
+            m = getMusic(ToString(a[0])); \
+            if (!m->loaded) { \
+                m = NULL; \
+            } \
+        } \
+    
+    #define musicState(cmp, newState, action) \
+        mapMusic(args, music); \
+        if (music) { \
+            if (cmp) { \
+                music->state = newState; \
+                action; \
+                return True(); \
+            \
+            } else { \
+                return False(); \
+            } \
+            \
+        } else { \
+            return Undefined(); \
+        }
+
+
+    // Loader -----------------------------------------------------------------
+    MusicMap *musics;
     Music* getMusic(std::string filename) {
         
         MusicMap::iterator it = musics->find(filename);
@@ -50,31 +99,6 @@ namespace Game { namespace api { namespace music {
         }
 
     }
-
-    #define mapMusic(a, m) \
-        if (a.Length() > 0) { \
-            m = getMusic(ToString(a[0])); \
-            if (!m->loaded) { \
-                m = NULL; \
-            } \
-        } \
-    
-    #define musicState(cmp, newState, action) \
-        mapMusic(args, music); \
-        if (music) { \
-            if (cmp) { \
-                music->state = newState; \
-                action; \
-                return True(); \
-            \
-            } else { \
-                return False(); \
-            } \
-            \
-        } else { \
-            return Undefined(); \
-        }
-
     void attachMusicStream(Music *music) {
         if (music->stream && !al_get_audio_stream_attached(music->stream)) {
             printf("attach music...\n");
@@ -188,20 +212,25 @@ namespace Game { namespace api { namespace music {
 
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
-        exposeApi(object, "load", load);
-        exposeApi(object, "play", play);
-        exposeApi(object, "pause", pause);
-        exposeApi(object, "resume", resume);
-        exposeApi(object, "stop", stop);
-        exposeApi(object, "setLooping", setLooping);
+
+        musics = new MusicMap();
+        setFunctionProp(object, "load", load);
+        setFunctionProp(object, "play", play);
+        setFunctionProp(object, "pause", pause);
+        setFunctionProp(object, "resume", resume);
+        setFunctionProp(object, "stop", stop);
+        setFunctionProp(object, "setLooping", setLooping);
+
     }
 
     void update(double time, double dt) {
         
     }
 
-    void exit() {
-        
+    void shutdown() {
+        debugMsg("api::music", "Shutdown...");
+        musics->clear();
+        delete musics;
     }
 
 }}}

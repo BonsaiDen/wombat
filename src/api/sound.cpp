@@ -22,6 +22,30 @@
 using namespace v8;
 namespace Game { namespace api { namespace sound {
 
+    // Structs ----------------------------------------------------------------
+    struct Sound;
+    typedef struct Sound {
+        std::string filename;
+        ALLEGRO_SAMPLE *sample;
+        bool loaded;
+
+    } Sound;
+
+    typedef std::map<const std::string, Sound*> SoundMap;
+
+
+    // Macros -----------------------------------------------------------------
+    #define mapSound(a, m) \
+        if (a.Length() > 0) { \
+            m = getSound(ToString(a[0])); \
+            if (!m->loaded) { \
+                m = NULL; \
+            } \
+        } \
+    
+
+    // Loader -----------------------------------------------------------------
+    SoundMap *sounds;
     Sound* getSound(std::string filename) {
         
         // Check if we need to load the sound
@@ -42,16 +66,8 @@ namespace Game { namespace api { namespace sound {
 
     }
 
-    #define mapSound(a, m) \
-        if (a.Length() > 0) { \
-            m = getSound(ToString(a[0])); \
-            if (!m->loaded) { \
-                m = NULL; \
-            } \
-        } \
-    
 
-    // Manage Sample instances ------------------------------------------------
+    // Sample Instances -------------------------------------------------------
     typedef std::vector<ALLEGRO_SAMPLE_INSTANCE*> SampleList;
     SampleList *instances;
 
@@ -146,9 +162,11 @@ namespace Game { namespace api { namespace sound {
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
 
+        sounds = new SoundMap();
+
         instances = new SampleList();
-        exposeApi(object, "load", load);
-        exposeApi(object, "play", play);
+        setFunctionProp(object, "load", load);
+        setFunctionProp(object, "play", play);
 
     }
 
@@ -172,13 +190,29 @@ namespace Game { namespace api { namespace sound {
 
     }
 
-    void exit() {
+    void shutdown() {
+
+        debugMsg("api::sound", "Shutdown...");
 
         for(SampleList::iterator it = instances->begin(); it != instances->end(); it++) {
             debugMsg("api::sound", "Destroyed sample instance");
             al_destroy_sample_instance(*it);
         }
         instances->clear();
+        delete instances;
+
+        for(SoundMap::iterator it = sounds->begin(); it != sounds->end(); it++) {
+            Sound *snd = it->second;
+            if (snd->sample) {
+                debugArgs("api::sound::sample", "Destroyed '%s'", snd->filename.data());
+                al_destroy_sample(snd->sample);
+            }
+            debugArgs("api::sound", "Destroyed '%s'", snd->filename.data());
+            delete snd;
+        }
+
+        sounds->clear();
+        delete sounds;
 
     }
 

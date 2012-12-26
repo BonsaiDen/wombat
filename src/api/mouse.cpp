@@ -119,8 +119,8 @@ namespace Game { namespace api { namespace mouse {
         }
 
         Handle<Object> pos = Game::templates.position->NewInstance();
-        pos->Set(String::New("x"), Number::New(Game::mouse.x - Game::graphics.offsetX + offsetX));
-        pos->Set(String::New("y"), Number::New(Game::mouse.y - Game::graphics.offsetY + offsetY));
+        setNumberProp(pos, "x", Game::mouse.x - Game::graphics.offsetX + offsetX);
+        setNumberProp(pos, "y", Game::mouse.y - Game::graphics.offsetY + offsetY);
 
         return pos;
         
@@ -130,41 +130,41 @@ namespace Game { namespace api { namespace mouse {
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
 
-        object->Set(String::New("CURSOR_NONE"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_NONE));
-        object->Set(String::New("CURSOR_DEFAULT"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT));
-        object->Set(String::New("CURSOR_ARROW"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_ARROW));
-        object->Set(String::New("CURSOR_BUSY"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_BUSY));
-        object->Set(String::New("CURSOR_QUESTION"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_QUESTION));
-        object->Set(String::New("CURSOR_EDIT"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_EDIT));
-        object->Set(String::New("CURSOR_MOVE"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_MOVE));
-        object->Set(String::New("CURSOR_RESIZE_N"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_N));
-        object->Set(String::New("CURSOR_RESIZE_W"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_W));
-        object->Set(String::New("CURSOR_RESIZE_S"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_S));
-        object->Set(String::New("CURSOR_RESIZE_E"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_E));
-        object->Set(String::New("CURSOR_RESIZE_NW"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NW));
-        object->Set(String::New("CURSOR_RESIZE_SW"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SW));
-        object->Set(String::New("CURSOR_RESIZE_SE"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SE));
-        object->Set(String::New("CURSOR_RESIZE_NE"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NE));
-        object->Set(String::New("CURSOR_PROGRESS"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_PROGRESS));
-        object->Set(String::New("CURSOR_PRECISION"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_PRECISION));
-        object->Set(String::New("CURSOR_LINK"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_LINK));
-        object->Set(String::New("CURSOR_ALT_SELECT"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_ALT_SELECT));
-        object->Set(String::New("CURSOR_UNAVAILABLE"), Number::New(ALLEGRO_SYSTEM_MOUSE_CURSOR_UNAVAILABLE));
+        setNumberProp(object, "CURSOR_NONE", ALLEGRO_SYSTEM_MOUSE_CURSOR_NONE);
+        setNumberProp(object, "CURSOR_DEFAULT", ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT);
+        setNumberProp(object, "CURSOR_ARROW", ALLEGRO_SYSTEM_MOUSE_CURSOR_ARROW);
+        setNumberProp(object, "CURSOR_BUSY", ALLEGRO_SYSTEM_MOUSE_CURSOR_BUSY);
+        setNumberProp(object, "CURSOR_QUESTION", ALLEGRO_SYSTEM_MOUSE_CURSOR_QUESTION);
+        setNumberProp(object, "CURSOR_EDIT", ALLEGRO_SYSTEM_MOUSE_CURSOR_EDIT);
+        setNumberProp(object, "CURSOR_MOVE", ALLEGRO_SYSTEM_MOUSE_CURSOR_MOVE);
+        setNumberProp(object, "CURSOR_RESIZE_N", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_N);
+        setNumberProp(object, "CURSOR_RESIZE_W", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_W);
+        setNumberProp(object, "CURSOR_RESIZE_S", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_S);
+        setNumberProp(object, "CURSOR_RESIZE_E", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_E);
+        setNumberProp(object, "CURSOR_RESIZE_NW", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NW);
+        setNumberProp(object, "CURSOR_RESIZE_SW", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SW);
+        setNumberProp(object, "CURSOR_RESIZE_SE", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_SE);
+        setNumberProp(object, "CURSOR_RESIZE_NE", ALLEGRO_SYSTEM_MOUSE_CURSOR_RESIZE_NE);
+        setNumberProp(object, "CURSOR_PROGRESS", ALLEGRO_SYSTEM_MOUSE_CURSOR_PROGRESS);
+        setNumberProp(object, "CURSOR_PRECISION", ALLEGRO_SYSTEM_MOUSE_CURSOR_PRECISION);
+        setNumberProp(object, "CURSOR_LINK", ALLEGRO_SYSTEM_MOUSE_CURSOR_LINK);
+        setNumberProp(object, "CURSOR_ALT_SELECT", ALLEGRO_SYSTEM_MOUSE_CURSOR_ALT_SELECT);
+        setNumberProp(object, "CURSOR_UNAVAILABLE", ALLEGRO_SYSTEM_MOUSE_CURSOR_UNAVAILABLE);
 
-        object->Set(String::New("BUTTON_LEFT"), Number::New(1));
-        object->Set(String::New("BUTTON_RIGHT"), Number::New(2));
+        setNumberProp(object, "BUTTON_LEFT", 1);
+        setNumberProp(object, "BUTTON_RIGHT", 2);
 
-        exposeApi(object, "isDown", isDown);
-        exposeApi(object, "wasPressed", wasPressed);
-        exposeApi(object, "wasReleased", wasReleased);
-        exposeApi(object, "hasFocus", hasFocus);
-        exposeApi(object, "getCount", getCount);
-        exposeApi(object, "getPosition", getCount);
-        exposeApi(object, "hide", hide);
-        exposeApi(object, "show", show);
-        exposeApi(object, "grab", grab);
-        exposeApi(object, "ungrab", ungrab);
-        exposeApi(object, "setCursor", setCursor);
+        setFunctionProp(object, "isDown", isDown);
+        setFunctionProp(object, "wasPressed", wasPressed);
+        setFunctionProp(object, "wasReleased", wasReleased);
+        setFunctionProp(object, "hasFocus", hasFocus);
+        setFunctionProp(object, "getCount", getCount);
+        setFunctionProp(object, "getPosition", getCount);
+        setFunctionProp(object, "hide", hide);
+        setFunctionProp(object, "show", show);
+        setFunctionProp(object, "grab", grab);
+        setFunctionProp(object, "ungrab", ungrab);
+        setFunctionProp(object, "setCursor", setCursor);
 
     }
 

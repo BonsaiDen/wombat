@@ -24,16 +24,16 @@ namespace Game { namespace api { namespace game {
 
     // API --------------------------------------------------------------------
     Handle<Value> getTime(const Arguments& args) {
-        return Number::New(Game::time.time);
+        return Number::New(time.time);
     }
 
     Handle<Value> getDelta(const Arguments& args) {
-        return Number::New(Game::time.delta);
+        return Number::New(time.delta);
     }
 
     Handle<Value> resume(const Arguments& args) {
-        if (Game::state.paused) {
-            Game::state.paused = false;
+        if (state.paused) {
+            state.paused = false;
             return True();
 
         } else {
@@ -42,27 +42,27 @@ namespace Game { namespace api { namespace game {
     }
 
     Handle<Value> pause(const Arguments& args) {
-        if (Game::state.paused) {
+        if (state.paused) {
             return False();
 
         } else {
-            Game::state.paused = true;
+            state.paused = true;
             return True();
         }
     }
 
     Handle<Value> isPaused(const Arguments& args) {
-        return Boolean::New(Game::state.paused);
+        return Boolean::New(state.paused);
     }
 
     Handle<Value> reload(const Arguments& args) {
-        Game::state.reload = true;
+        state.reload = true;
         return Undefined();
     }
 
     Handle<Value> quit(const Arguments& args) {
-        if (Game::state.running) {
-            Game::state.running = false;
+        if (state.running) {
+            state.running = false;
             return True();
 
         } else {
@@ -73,13 +73,13 @@ namespace Game { namespace api { namespace game {
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
 
-        exposeApi(object, "getTime", getTime);
-        exposeApi(object, "getDelta", getDelta);
-        exposeApi(object, "pause", pause);
-        exposeApi(object, "resume", resume);
-        exposeApi(object, "isPaused", isPaused);
-        exposeApi(object, "reload", reload); 
-        exposeApi(object, "quit", quit); 
+        setFunctionProp(object, "getTime", getTime);
+        setFunctionProp(object, "getDelta", getDelta);
+        setFunctionProp(object, "pause", pause);
+        setFunctionProp(object, "resume", resume);
+        setFunctionProp(object, "isPaused", isPaused);
+        setFunctionProp(object, "reload", reload); 
+        setFunctionProp(object, "quit", quit); 
 
     }
 

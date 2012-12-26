@@ -23,7 +23,6 @@ using namespace v8;
 namespace Game { namespace api { namespace graphics {
 
     #define getNumber(obj, key)
-    #define setNumber(obj, key, value) obj->Set(String::New(key), Number::New(value));
 
     #define colorMap(colorValue) \
         int l = args.Length(); \
@@ -38,10 +37,10 @@ namespace Game { namespace api { namespace graphics {
         al_unmap_rgba(colorValue, &r, &g, &b, &a); \
         \
         Handle<Object> col = templates.color->NewInstance(); \
-        setNumber(col, "r", r); \
-        setNumber(col, "g", g); \
-        setNumber(col, "b", b); \
-        setNumber(col, "a", ((double)a) / 255); \
+        setNumberProp(col, "r", r); \
+        setNumberProp(col, "g", g); \
+        setNumberProp(col, "b", b); \
+        setNumberProp(col, "a", ((double)a) / 255); \
         return col;
         
     #define colorMapFloat(colorValue) \
@@ -57,10 +56,10 @@ namespace Game { namespace api { namespace graphics {
         al_unmap_rgba_f(colorValue, &r, &g, &b, &a); \
         \
         Handle<Object> col = templates.color->NewInstance(); \
-        setNumber(col, "r", r); \
-        setNumber(col, "g", g); \
-        setNumber(col, "b", b); \
-        setNumber(col, "a", a); \
+        setNumberProp(col, "r", r); \
+        setNumberProp(col, "g", g); \
+        setNumberProp(col, "b", b); \
+        setNumberProp(col, "a", a); \
         return col;
 
 
@@ -71,8 +70,8 @@ namespace Game { namespace api { namespace graphics {
     }
     Handle<Value> getRenderOffset(const Arguments& args) {
         Handle<Object> pos = templates.position->NewInstance();
-        setNumber(pos, "x", Game::graphics.offsetX);
-        setNumber(pos, "y", Game::graphics.offsetY);
+        setNumberProp(pos, "x", Game::graphics.offsetX);
+        setNumberProp(pos, "y", Game::graphics.offsetY);
         return pos;
     }
 
@@ -104,8 +103,8 @@ namespace Game { namespace api { namespace graphics {
     }
     Handle<Value> getSize(const Arguments& args) {
         Handle<Object> size = templates.size->NewInstance();
-        setNumber(size, "w", Game::graphics.width);
-        setNumber(size, "h", Game::graphics.height);
+        setNumberProp(size, "w", Game::graphics.width);
+        setNumberProp(size, "h", Game::graphics.height);
         return size;
     }
 
@@ -120,10 +119,10 @@ namespace Game { namespace api { namespace graphics {
     }
 
 
-    Handle<Value> setBgColor(const Arguments& args) {
+    Handle<Value> setBackColor(const Arguments& args) {
         colorMap(Game::graphics.bgColor);
     }
-    Handle<Value> getBgColor(const Arguments& args) {
+    Handle<Value> getBackColor(const Arguments& args) {
         colorUnmap(Game::graphics.bgColor);
     }
 
@@ -203,30 +202,29 @@ namespace Game { namespace api { namespace graphics {
     // Export -----------------------------------------------------------------
     void init(Handle<Object> object) {
 
-        exposeApi(object, "setRenderOffset", setRenderOffset);
-        exposeApi(object, "getRenderOffset", getRenderOffset);
+        setFunctionProp(object, "setRenderOffset", setRenderOffset);
+        setFunctionProp(object, "getRenderOffset", getRenderOffset);
 
-        exposeApi(object, "setScale", setScale);
-        exposeApi(object, "getScale", getScale);
+        setFunctionProp(object, "setScale", setScale);
+        setFunctionProp(object, "getScale", getScale);
 
-        exposeApi(object, "setSize", setSize);
-        exposeApi(object, "getSize", getSize);
+        setFunctionProp(object, "setSize", setSize);
+        setFunctionProp(object, "getSize", getSize);
 
-        exposeApi(object, "setColor", setColor);
-        exposeApi(object, "getColor", getColor);
+        setFunctionProp(object, "setColor", setColor);
+        setFunctionProp(object, "getColor", getColor);
 
-        exposeApi(object, "setBackColor", setBgColor);
-        exposeApi(object, "getBackColor", getBgColor);
+        setFunctionProp(object, "setBackColor", setBackColor);
+        setFunctionProp(object, "getBackColor", getBackColor);
 
-        exposeApi(object, "setBlendColor", setBlendColor);
-        exposeApi(object, "getBlendColor", getBlendColor);
+        setFunctionProp(object, "setBlendColor", setBlendColor);
+        setFunctionProp(object, "getBlendColor", getBlendColor);
 
-        // TODO convert into a property
-        exposeApi(object, "setLineWidth", setLineWidth);
-        exposeApi(object, "getLineWidth", getLineWidth);
+        setFunctionProp(object, "setLineWidth", setLineWidth);
+        setFunctionProp(object, "getLineWidth", getLineWidth);
 
-        exposeApi(object, "line", line);
-        exposeApi(object, "rect", rect);
+        setFunctionProp(object, "line", line);
+        setFunctionProp(object, "rect", rect);
 
     }
 
