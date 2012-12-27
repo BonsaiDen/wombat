@@ -38,9 +38,40 @@ namespace Game { namespace api { namespace console {
             } else {
                 printf(" ");
             }
-            
+
             v8::String::Utf8Value str(args[i]);
-            printf("%s", *str);
+            if (args[i]->IsArray()) {
+                printf("[ %s ]", *str);
+                
+            } else if (args[i]->IsFunction()) {
+                printf("%s", *str);
+                
+            } else if (args[i]->IsObject()) {
+
+                printf("{ ");
+
+                v8::Handle<v8::Object> object = v8::Handle<v8::Object>::Cast(args[i]);
+                v8::Handle<v8::Array> keys = object->GetPropertyNames();
+                for (unsigned int i = 0; i < keys->Length(); i++) {
+
+                    v8::Handle<v8::String> name = keys->Get(v8::Number::New(i))->ToString();
+                    v8::Handle<v8::Value> value = object->Get(name)->ToString();
+                    v8::String::Utf8Value key(name);
+                    v8::String::Utf8Value val(value);
+
+                    printf("%s: %s ", *key, *val);
+
+                    if (i < keys->Length() - 1) {
+                        printf(", ");
+                    }
+
+                }
+
+                printf(" }");
+                
+            } else {
+                printf("%s", *str);
+            }
 
         }
 
