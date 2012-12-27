@@ -78,6 +78,7 @@ namespace Game { namespace api { namespace graphics {
         if (args.Length() >= 1) {
             int scale = ToInt32(args[0]);
             if (scale != Game::graphics.scale) {
+                setNumberProp(js.config, "scale", scale);
                 Game::graphics.scale = scale;
                 Game::graphics.wasResized = true;
             }
@@ -93,6 +94,8 @@ namespace Game { namespace api { namespace graphics {
             int width = ToInt32(args[0]);
             int height = ToInt32(args[1]);
             if (width != Game::graphics.width || height != Game::graphics.height) {
+                setNumberProp(js.config, "width", width);
+                setNumberProp(js.config, "height", height);
                 Game::graphics.width = width;
                 Game::graphics.height = height;
                 Game::graphics.wasResized = true;

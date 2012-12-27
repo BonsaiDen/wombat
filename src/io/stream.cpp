@@ -34,7 +34,7 @@ namespace Game { namespace io { namespace stream {
             std::string ext = filename.substr(filename.find_last_of("."));
 
             // al_destroy_audio_stream() will close the file itself
-            stream = al_load_audio_stream_f(file, ext.data(), 2, 2048);
+            stream = al_load_audio_stream_f(file, ext.data(), 2, 4096);
 
         } 
         

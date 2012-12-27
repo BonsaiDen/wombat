@@ -65,6 +65,7 @@ namespace Game {
     typedef struct {
         v8::Persistent<v8::Context> context;
         v8::Persistent<v8::Object> global;
+        v8::Persistent<v8::Object> config;
         v8::Persistent<v8::Object> game;
         v8::Persistent<v8::Object> console;
         v8::Persistent<v8::Object> keyboard;

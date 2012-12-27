@@ -135,17 +135,23 @@ namespace Game { namespace api { namespace sound {
                 
                 if (args.Length() > 1 && args[1]->IsNumber()) {
                     float gain = ToFloat(args[1]);
-                    al_set_sample_instance_gain(instance, gain);
+                    if (gain >= 0.0f && gain <= 1.0f) {
+                        al_set_sample_instance_gain(instance, gain);
+                    }
                 }
 
                 if (args.Length() > 2 && args[2]->IsNumber()) {
                     float pan = ToFloat(args[2]);
-                    al_set_sample_instance_pan(instance, pan);
+                    if (pan >= -1.0f && pan <= 1.0f) {
+                        al_set_sample_instance_pan(instance, pan);
+                    }
                 }
                 
                 if (args.Length() > 3 && args[3]->IsNumber()) {
                     float speed = ToFloat(args[3]);
-                    al_set_sample_instance_speed(instance, speed);
+                    if (speed > 0.0f && speed <= 1.0f) {
+                        al_set_sample_instance_gain(instance, speed);
+                    }
                 }
 
                 al_set_sample_instance_playing(instance, true);

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 #include "../Game.h"
+#include <algorithm>
 
 namespace Game { namespace api { namespace music {
 
@@ -35,10 +36,14 @@ namespace Game { namespace api { namespace music {
         MUSIC_STATE state;
         bool loaded;
         bool looping;
+        float gain;
+        float pan;
+        float speed;
 
     } Music;
 
     typedef std::map<const std::string, Music*> MusicMap;
+    typedef std::vector<Music*> MusicList;
 
 
     //// Macros -----------------------------------------------------------------
@@ -69,6 +74,8 @@ namespace Game { namespace api { namespace music {
 
     //// Loader -----------------------------------------------------------------
     MusicMap *songs;
+    MusicList *playing;
+
     Music* getMusic(std::string filename) {
        
         MusicMap::iterator it = songs->find(filename);
@@ -81,6 +88,9 @@ namespace Game { namespace api { namespace music {
             song->filename = filename;
             song->stream = NULL;
             song->looping = false;
+            song->gain = 1.0f;
+            song->pan = 0.0f;
+            song->speed = 1.0f;
             song->state = MUSIC_STATE_STOPPED;
             song->loaded = false; 
             songs->insert(std::make_pair(filename, song));
@@ -97,6 +107,10 @@ namespace Game { namespace api { namespace music {
             song->stream = io::stream::open(filename);
             if (song->stream) {
                 al_set_audio_stream_playing(song->stream, false);
+                al_set_audio_stream_playmode(song->stream, song->looping ? ALLEGRO_PLAYMODE_LOOP : ALLEGRO_PLAYMODE_ONCE);
+                al_set_audio_stream_gain(song->stream, song->gain);
+                al_set_audio_stream_pan(song->stream, song->pan);
+                al_set_audio_stream_speed(song->stream, song->speed);
                 song->loaded = true;
 
             } else {
@@ -109,45 +123,49 @@ namespace Game { namespace api { namespace music {
 
     }
 
-    void attachMusicStream(Music *music) {
-       if (music->stream && !al_get_audio_stream_attached(music->stream)) {
-           debugArgs("music", "Attach %s", music->filename.data());
-           al_attach_audio_stream_to_mixer(music->stream, al_get_default_mixer());
-       }
+    void playStream(Music *song) {
+
+        debugArgs("music", "Play %s", song->filename.data());
+
+        if (song->stream && !al_get_audio_stream_attached(song->stream)) {
+            debugArgs("music", "Attach %s", song->filename.data());
+            al_attach_audio_stream_to_mixer(song->stream, al_get_default_mixer());
+        }
+
+        playing->push_back(song);
+        al_set_audio_stream_playing(song->stream, true);
+
     }
 
-    void detachMusicStream(Music *music) {
-       if (music->stream && al_get_audio_stream_attached(music->stream)) {
-           debugArgs("music", "Detach %s", music->filename.data());
-           al_detach_audio_stream(music->stream);
-       }
+    void stopStream(Music *song) {
+
+        debugArgs("music", "Stop %s", song->filename.data());
+
+        playing->erase(std::remove(playing->begin(), playing->end(), song), playing->end());
+        al_set_audio_stream_playing(song->stream, false);
+        al_rewind_audio_stream(song->stream);
+
+        if (song->stream && al_get_audio_stream_attached(song->stream)) {
+            debugArgs("music", "Detach %s", song->filename.data());
+            al_detach_audio_stream(song->stream);
+        }
+
+        al_destroy_audio_stream(song->stream);
+        song->stream = NULL;
+
     }
 
 
     // API --------------------------------------------------------------------
     v8::Handle<v8::Value> load(const v8::Arguments& args) {
-
        Music *song;
        mapMusic(args, song);
-       if (song) {
-           return v8::True();
-       } 
-
-       return v8::False();
-
-
+       return song ? v8::True() : v8::False();
     }
-    v8::Handle<v8::Value> play(const v8::Arguments& args) {
 
+    v8::Handle<v8::Value> play(const v8::Arguments& args) {
         Music *song;
-        musicState(
-            song->state != MUSIC_STATE_PLAYING,
-            MUSIC_STATE_PLAYING, 
-            attachMusicStream(song);
-            debugArgs("music", "Play %s", song->filename.data());
-            al_set_audio_stream_playing(song->stream, true);
-        )
-       
+        musicState(song->state != MUSIC_STATE_PLAYING, MUSIC_STATE_PLAYING, playStream(song));
     }
 
     v8::Handle<v8::Value> pause(const v8::Arguments& args) {
@@ -158,7 +176,9 @@ namespace Game { namespace api { namespace music {
             MUSIC_STATE_PAUSED, 
 
             debugArgs("music", "Pause %s", song->filename.data());
+            playing->erase(std::remove(playing->begin(), playing->end(), song), playing->end());
             al_set_audio_stream_playing(song->stream, false);
+
         )
 
     }
@@ -171,26 +191,15 @@ namespace Game { namespace api { namespace music {
             MUSIC_STATE_PLAYING, 
 
             debugArgs("music", "Resume %s", song->filename.data());
+            playing->push_back(song);
             al_set_audio_stream_playing(song->stream, true);
         )
 
     }
 
     v8::Handle<v8::Value> stop(const v8::Arguments& args) {
-       
         Music *song;
-        musicState(
-            song->state != MUSIC_STATE_STOPPED,
-            MUSIC_STATE_STOPPED,
-
-            debugArgs("music", "Stop %s", song->filename.data());
-            al_set_audio_stream_playing(song->stream, false);
-            al_rewind_audio_stream(song->stream);
-            detachMusicStream(song);
-            al_destroy_audio_stream(song->stream);
-            song->stream = NULL;
-        )
-
+        musicState(song->state != MUSIC_STATE_STOPPED, MUSIC_STATE_STOPPED, stopStream(song));
     }
 
     v8::Handle<v8::Value> setLooping(const v8::Arguments& args) {
@@ -215,12 +224,70 @@ namespace Game { namespace api { namespace music {
 
     }
 
-    v8::Handle<v8::Value> setPan(const v8::Arguments& args) {
-        return v8::Undefined();
+    v8::Handle<v8::Value> setVolume(const v8::Arguments& args) {
+        
+        Music *song;
+        mapMusic(args, song);
+        if (song && args.Length() > 1 && args[1]->IsNumber()) {
+
+            float gain = ToFloat(args[1]);
+            if (gain >= 0.0f && gain <= 1.0f) {
+                song->gain = gain;
+                al_set_audio_stream_gain(song->stream, gain);
+                return v8::True();
+
+            } else {
+                return v8::False();
+            }
+
+        } else {
+            return v8::Undefined();
+        }
+
     }
 
-    v8::Handle<v8::Value> setVolume(const v8::Arguments& args) {
-        return v8::Undefined();
+    v8::Handle<v8::Value> setPan(const v8::Arguments& args) {
+
+        Music *song;
+        mapMusic(args, song);
+        if (song && args.Length() > 1 && args[1]->IsNumber()) {
+
+            float pan = ToFloat(args[1]);
+            if (pan >= -1.0f && pan <= 1.0f) {
+                song->pan = pan;
+                al_set_audio_stream_pan(song->stream, pan);
+                return v8::True();
+
+            } else {
+                return v8::False();
+            }
+
+        } else {
+            return v8::Undefined();
+        }
+
+    }
+
+    v8::Handle<v8::Value> setSpeed(const v8::Arguments& args) {
+
+        Music *song;
+        mapMusic(args, song);
+        if (song && args.Length() > 1 && args[1]->IsNumber()) {
+
+            float speed = ToFloat(args[1]);
+            if (speed > 0.0f && speed <= 1.0f) {
+                song->speed = speed;
+                al_set_audio_stream_speed(song->stream, speed);
+                return v8::True();
+
+            } else {
+                return v8::False();
+            }
+
+        } else {
+            return v8::Undefined();
+        }
+
     }
 
 
@@ -228,20 +295,37 @@ namespace Game { namespace api { namespace music {
     void init(v8::Handle<v8::Object> object) {
 
         songs = new MusicMap();
+        playing = new MusicList();
         setFunctionProp(object, "load", load);
         setFunctionProp(object, "play", play);
         setFunctionProp(object, "pause", pause);
         setFunctionProp(object, "resume", resume);
         setFunctionProp(object, "stop", stop);
         setFunctionProp(object, "setLooping", setLooping);
+        setFunctionProp(object, "setVolume", setVolume);
+        setFunctionProp(object, "setPan", setPan);
+        setFunctionProp(object, "setSpeed", setSpeed);
 
     }
 
     void update(double time, double dt) {
-        
+
+        for(MusicList::iterator it = playing->begin(); it != playing->end(); it++) {
+
+            Music *song = *it;
+            if (song->stream && !al_get_audio_stream_playing(song->stream)) {
+                debugArgs("api::music", "Stream '%s' ended", song->filename.data());
+                stopStream(song); // Invalidates the iterator, thus, we need to break out
+                song->state = MUSIC_STATE_STOPPED;
+                break;
+            }
+
+        }
+
     }
 
     void shutdown() {
+
         debugMsg("api::music", "Shutdown...");
 
         for(MusicMap::iterator it = songs->begin(); it != songs->end(); it++) {
@@ -249,11 +333,7 @@ namespace Game { namespace api { namespace music {
             Music *song = it->second;
             if (song->stream) {
                 debugArgs("api::music::stream", "Destroyed '%s'", song->filename.data());
-                al_set_audio_stream_playing(song->stream, false);
-                al_rewind_audio_stream(song->stream);
-                detachMusicStream(song);
-                al_destroy_audio_stream(song->stream);
-                song->stream = NULL;
+                stopStream(song);
             }
 
             debugArgs("api::music", "Destroyed '%s'", song->filename.data());
@@ -261,9 +341,12 @@ namespace Game { namespace api { namespace music {
 
         }
 
-
         songs->clear();
         delete songs;
+
+        playing->clear();
+        delete playing;
+
     }
 
 }}}

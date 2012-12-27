@@ -94,6 +94,7 @@ namespace Game {
         v8::HandleScope scope;
 
         js.global = v8::Persistent<v8::Object>::New(js.context->Global());
+        js.config = JSObject();
         js.game = JSObject();
         js.console = JSObject();
         js.keyboard = JSObject();
@@ -131,6 +132,7 @@ namespace Game {
         // Expose mapped API to JavaScript
         setProp(js.global, "console", js.console);
         setProp(js.global, "game", js.game);
+        setProp(js.game, "config", js.config);
         setProp(js.global, "keyboard", js.keyboard);
         setProp(js.global, "mouse", js.mouse);
         setProp(js.global, "graphics", js.graphics);
@@ -178,6 +180,13 @@ namespace Game {
         graphics.lineWidth = 1;
         graphics.offsetX = 0;
         graphics.offsetY = 0;
+
+        // Config object
+        js.config->Set(v8::String::NewSymbol("title"), v8::String::New(graphics.title.data()));
+        setNumberProp(js.config, "width", graphics.width);
+        setNumberProp(js.config, "height", graphics.height);
+        setNumberProp(js.config, "scale", graphics.scale);
+        setNumberProp(js.config, "fps", graphics.fps);
 
         // Resources
         moduleCache = new ModuleMap();
@@ -430,6 +439,7 @@ namespace Game {
 
         // Cleanup APIs
         debugMsg("exit", "Destroy JS");
+        js.config.Dispose();
         js.game.Dispose();
         js.console.Dispose();
         js.keyboard.Dispose();
@@ -458,24 +468,17 @@ namespace Game {
         v8::Context::Scope contextScope(js.context);
         v8::HandleScope scope;
             
-        // Setup config object passed to JS
-        v8::Handle<v8::Object> config = JSObject();
-        config->Set(v8::String::NewSymbol("title"), v8::String::New(graphics.title.data()));
-        setNumberProp(config, "width", graphics.width);
-        setNumberProp(config, "height", graphics.height);
-        setNumberProp(config, "scale", graphics.scale);
-        setNumberProp(config, "fps", graphics.fps);
-
+        // Invoke init with the config object
         v8::Handle<v8::Value> args[1];
-        args[0] = config;
+        args[0] = js.config;
         invoke("init", args, 1);
 
-        graphics.width = ToInt32(config->Get(v8::String::New("width")));
-        graphics.height = ToInt32(config->Get(v8::String::New("height")));
-        graphics.scale = ToInt32(config->Get(v8::String::New("scale")));
-        graphics.fps = ToInt32(config->Get(v8::String::New("fps")));
+        graphics.width = ToInt32(js.config->Get(v8::String::New("width")));
+        graphics.height = ToInt32(js.config->Get(v8::String::New("height")));
+        graphics.scale = ToInt32(js.config->Get(v8::String::New("scale")));
+        graphics.fps = ToInt32(js.config->Get(v8::String::New("fps")));
 
-        v8::String::Utf8Value text(config->Get(v8::String::New("title")));
+        v8::String::Utf8Value text(js.config->Get(v8::String::New("title")));
         graphics.title.clear();
         graphics.title.append(*text);
 
