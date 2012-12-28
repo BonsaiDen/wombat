@@ -28,7 +28,7 @@ game.update = function(time, dt) {
 
     if (keyboard.wasPressed(keyboard.KEY_L)) {
         console.log('set music volume');
-        music.setVolume('music.ogg', 0.5);
+        music.setVolume('music.ogg', 0.5, 3);
     }
 
     if (keyboard.wasPressed(keyboard.KEY_B)) {

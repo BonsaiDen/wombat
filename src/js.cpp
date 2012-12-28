@@ -85,8 +85,8 @@ v8::Handle<v8::Script> loadScript(const char *name) {
         delete[] data;
     
     } else {
-        printf("Error: Failed to load module \"%s\"\n", name);
-        script = v8::Script::Compile(v8::String::New("undefined"), v8::String::New(filename.data()));
+        printf("Fatal Error: Failed to load module \"%s\"\n", name);
+        script = v8::Script::Compile(v8::String::New("(function() { var module = { exports: {} }; (function(exports, module, global) {})(module.exports, module, this); return module; })();"), v8::String::New(filename.data()));
         return scope.Close(script);
     }
     
@@ -97,7 +97,7 @@ v8::Handle<v8::Script> loadScript(const char *name) {
 
     script = v8::Script::Compile(wrapped, v8::String::New(filename.data()));
     if (script.IsEmpty()) {
-        printf("Error: Could not load module \"%s\"\n", name);
+        printf("Fatal Error: Could not load module \"%s\"\n", name);
         handleException(tryCatch);
         script = v8::Script::Compile(v8::String::New("undefined"), v8::String::New(filename.data()));
     }

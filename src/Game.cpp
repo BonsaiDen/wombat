@@ -622,12 +622,12 @@ namespace Game {
     v8::Handle<v8::Value> requireModule(std::string name) {
 
         v8::HandleScope scope;
-        v8::Handle<v8::Value> exports;
+        v8::Handle<v8::Value> exports = v8::Undefined();
 
         ModuleMap::iterator it = moduleCache->find(name);
         if (it == moduleCache->end()) {
-            debugArgs("module::disk", "'%s' required", name.data());
 
+            debugArgs("module::disk", "'%s' required", name.data());
             v8::Handle<v8::Object> module = v8::Handle<v8::Object>::Cast(executeScript(loadScript(name.data())));
             exports = module->Get(v8::String::NewSymbol("exports"));
             moduleCache->insert(std::make_pair(name, v8::Persistent<v8::Value>::New(exports)));

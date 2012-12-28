@@ -1,10 +1,17 @@
 A *very* simple game engine built around Allegro and V8.
 
-Check out `game.js` for a simple example of how to write a game.
+## Build
 
-In order to run it execute: `./wombat game`
+You'll need cmake installed.
 
-You'll need Allegro 5 and libv8 to build wombat.
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ ./wombat ../game
+```
+> You'll need Allegro 5 and libv8 to build wombat.
 
 
 ## Scope
