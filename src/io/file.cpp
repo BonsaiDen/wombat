@@ -42,7 +42,7 @@ namespace Game { namespace io { namespace file {
 
     }
 
-    ALLEGRO_FILE *open(std::string filename) {
+    ALLEGRO_FILE *open(const std::string filename, void **rbuf) {
 
         debugArgs("io::file", "Loading '%s'...", filename.data());
 
@@ -54,17 +54,20 @@ namespace Game { namespace io { namespace file {
             return NULL;
 
         } else {
+            *rbuf = buf;
             debugArgs("io::file", "Loaded '%s', %d bytes", filename.data(), (int)len);
             return al_open_memfile(buf, len, "r");
         }
 
     }
 
-    bool close(ALLEGRO_FILE *fp) {
+    bool close(ALLEGRO_FILE *fp, void **rbuf) {
 
         if (fp != NULL) {
             debugMsg("io::file", "Closed file");
             al_fclose(fp);
+            al_free(*rbuf);
+            *rbuf = NULL;
             return true;
 
         } else {

@@ -23,18 +23,20 @@ namespace Game { namespace io { namespace stream {
 
     typedef std::map<const std::string, ALLEGRO_FILE*> StreamFileMap;
 
-    ALLEGRO_AUDIO_STREAM *open(std::string filename) {
+    ALLEGRO_AUDIO_STREAM *open(const std::string filename) {
 
         debugArgs("io::stream", "Loading '%s'...", filename.data());
 
+        void *rbuf;
+        ALLEGRO_FILE *fp = file::open(filename, &rbuf);
         ALLEGRO_AUDIO_STREAM *stream = NULL;
-        ALLEGRO_FILE *file  = file::open(filename);
 
-        if (file != NULL) {
+        if (fp != NULL) {
             std::string ext = filename.substr(filename.find_last_of("."));
 
             // al_destroy_audio_stream() will close the file itself
-            stream = al_load_audio_stream_f(file, ext.data(), 2, 4096);
+            stream = al_load_audio_stream_f(fp, ext.data(), 2, 4096);
+            //file::close(fp, &rbuf);
 
         } 
         

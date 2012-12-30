@@ -308,7 +308,7 @@ namespace Game { namespace api { namespace music {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         songs = new MusicMap();
         playing = new MusicList();

@@ -175,7 +175,7 @@ namespace Game { namespace api { namespace image {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         images = new ImageMap();
 
@@ -190,13 +190,16 @@ namespace Game { namespace api { namespace image {
         
         debugMsg("api::image", "Shutdown...");
         for(ImageMap::iterator it = images->begin(); it != images->end(); it++) {
+
             Image *img = it->second;
             if (img->bitmap) {
                 debugArgs("api::image::bitmap", "Destroyed '%s'", img->filename.data());
                 al_destroy_bitmap(img->bitmap);
             }
+
             debugArgs("api::image", "Destroyed '%s'", img->filename.data());
             delete img;
+
         }
 
         images->clear();

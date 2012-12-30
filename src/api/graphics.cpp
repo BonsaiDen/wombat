@@ -202,7 +202,7 @@ namespace Game { namespace api { namespace graphics {
     }
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         setFunctionProp(object, "setRenderOffset", setRenderOffset);
         setFunctionProp(object, "getRenderOffset", getRenderOffset);

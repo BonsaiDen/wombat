@@ -21,17 +21,19 @@
 
 namespace Game { namespace io { namespace image {
 
-    ALLEGRO_BITMAP *open(std::string filename) {
+    ALLEGRO_BITMAP *open(const std::string filename) {
 
         debugArgs("io::image", "Loading '%s'...", filename.data());
 
         ALLEGRO_BITMAP *img = NULL;
-        ALLEGRO_FILE *fp = file::open(filename);
+
+        void *rbuf;
+        ALLEGRO_FILE *fp = file::open(filename, &rbuf);
 
         if (fp != NULL) {
             std::string ext = filename.substr(filename.find_last_of("."));
             img = al_load_bitmap_f(fp, ext.data());
-            file::close(fp);
+            file::close(fp, &rbuf);
         } 
         
         if (img) {

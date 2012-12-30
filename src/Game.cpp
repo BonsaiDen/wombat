@@ -27,7 +27,7 @@ namespace Game {
     ModuleMap *moduleCache;
 
     // State
-    Allegro allegro;
+    Allegro allegro = { NULL, NULL, NULL, NULL, NULL, NULL };
     JS js;
     State state;
     Time time;
@@ -147,16 +147,18 @@ namespace Game {
         // Allegro Things
         allegro.eventQueue = NULL;
         allegro.timer = NULL;
-        allegro.display = NULL;
+        //allegro.display = NULL;
         allegro.background = NULL;
 
         // State and Time
         state.running = false;
         state.paused = false;
         state.reload = false;
+        state.fullReload = false;
         state.error = false;
         state.main = "game";
 
+        printf("reset state... \n");
         time.time = 0;
         time.delta = 0;
 
@@ -213,18 +215,24 @@ namespace Game {
 
     int loop() {
 
-        debugMsg("loop", "Enter");
-        
+        double lastFrameTime, now = 0;
+        bool redraw ;
+        unsigned int i;
+
         v8::Context::Scope contextScope(js.context);
         v8::HandleScope scope;
         v8::Handle<v8::Value> args[2];
 
-        double lastFrameTime = 0, now = 0;
-        bool redraw = false;
-        unsigned int i = 0;
+        loopStart:
 
+        debugMsg("loop", "Enter");
+
+        lastFrameTime = now;
+        now = 0;
+        redraw = false;
         al_start_timer(allegro.timer);
         state.running = true;
+
         while (state.running) {
 
             ALLEGRO_EVENT event;
@@ -400,30 +408,19 @@ namespace Game {
         debugMsg("loop", "Leave");
 
         exit();
+
+        if (state.fullReload) {
+            debugMsg("reset", "Full");
+            init(state.main);
+            goto loopStart;
+        }
+
         return 0;
  
     }
 
     void exit() {
 
-        // Clean up allegro ---------------------------------------------------
-        debugMsg("exit", "Destroy Allegro");
-        if (allegro.mixer) {
-            al_destroy_mixer(allegro.mixer);
-        }
-
-        if (allegro.voice) {
-            al_destroy_voice(allegro.voice);
-        }
-
-        al_destroy_timer(allegro.timer);
-        al_destroy_event_queue(allegro.eventQueue);
-        al_destroy_display(allegro.display);
-
-        if (allegro.background != NULL) {
-            al_destroy_bitmap(allegro.background);
-        }
-        
         // Remove cached modules
         debugMsg("exit", "Destroy Modules");
         for(ModuleMap::iterator it = moduleCache->begin(); it != moduleCache->end(); it++) {
@@ -431,6 +428,7 @@ namespace Game {
             it->second.Clear();
         }
         moduleCache->clear();
+        delete moduleCache;
 
         debugMsg("exit", "Shutdown API and IO");
         api::image::shutdown();
@@ -458,6 +456,36 @@ namespace Game {
         js.global.Dispose();
         js.context.Dispose();
         js.context.Clear();
+
+
+        // Clean up allegro ---------------------------------------------------
+        debugMsg("exit", "Destroy Allegro");
+        if (allegro.mixer) {
+            al_destroy_mixer(allegro.mixer);
+        }
+
+        if (allegro.voice) {
+            al_destroy_voice(allegro.voice);
+        }
+
+        if (allegro.background != NULL) {
+            al_destroy_bitmap(allegro.background);
+        }
+
+        if (!state.fullReload) {
+            al_destroy_display(allegro.display);
+        }
+
+        al_uninstall_audio();
+        al_uninstall_mouse();
+        al_uninstall_keyboard();
+
+        al_destroy_timer(allegro.timer);
+        al_destroy_event_queue(allegro.eventQueue);
+
+        if (!state.fullReload) {
+            al_uninstall_system();
+        }
 
     }
 
@@ -519,10 +547,10 @@ namespace Game {
 
         allegro.timer = al_create_timer(1.0 / graphics.fps);
         allegro.eventQueue = al_create_event_queue();
-        al_install_keyboard();
-        al_install_mouse();
 
         keyboard.hasFocus = true;
+        al_install_keyboard();
+        al_install_mouse();
 
         al_register_event_source(allegro.eventQueue, al_get_keyboard_event_source());
         al_register_event_source(allegro.eventQueue, al_get_mouse_event_source());
@@ -530,10 +558,14 @@ namespace Game {
 
 
         // Setup Display ------------------------------------------------------
-        allegro.display = al_create_display(graphics.width * graphics.scale, graphics.height * graphics.scale);
-        if (allegro.display == NULL) {
-            debugMsg("initAllegro", "al_create_display() failed");
-            return false;
+        if (!allegro.display) {
+            
+            allegro.display = al_create_display(graphics.width * graphics.scale, graphics.height * graphics.scale);
+            if (allegro.display == NULL) {
+                debugMsg("initAllegro", "al_create_display() failed");
+                return false;
+            }
+
         }
 
         al_set_new_display_option(ALLEGRO_VSYNC, true, ALLEGRO_SUGGEST);
@@ -591,8 +623,9 @@ namespace Game {
         
         if (object->IsFunction()) {
 
+            v8::TryCatch t;
+
             v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(object);
-            v8::TryCatch t = v8::TryCatch();
             func->Call(js.global, argc, args);
 
             if (t.HasCaught()) {
@@ -619,7 +652,7 @@ namespace Game {
         }
     }
 
-    v8::Handle<v8::Value> requireModule(std::string name) {
+    v8::Handle<v8::Value> requireModule(const std::string name) {
 
         v8::HandleScope scope;
         v8::Handle<v8::Value> exports = v8::Undefined();

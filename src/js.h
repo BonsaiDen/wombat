@@ -25,24 +25,24 @@
 
 v8::Handle<v8::Script> loadScript(const char *name);
 v8::Handle<v8::Value> requireScript(const v8::Arguments& args);
-v8::Handle<v8::Value> executeScript(v8::Handle<v8::Script> script);
+v8::Handle<v8::Value> executeScript(const v8::Handle<v8::Script> &script);
 v8::Persistent<v8::Object> JSObject();
 
-void handleException(v8::TryCatch tryCatch);
+void handleException(const v8::TryCatch &tryCatch);
 
-inline int ToInt32(v8::Handle<v8::Value> i) {
+inline int ToInt32(const v8::Handle<v8::Value> &i) {
     return i->Int32Value();
 }
 
-inline float ToFloat(v8::Handle<v8::Value> f) {
+inline float ToFloat(const v8::Handle<v8::Value> &f) {
     return static_cast<float>(f->NumberValue());
 }
 
-inline float ToBoolean(v8::Handle<v8::Value> f) {
+inline float ToBoolean(const v8::Handle<v8::Value> &f) {
     return f->BooleanValue();
 }
 
-inline std::string ToString(v8::Handle<v8::Value> f) {
+inline std::string ToString(const v8::Handle<v8::Value> &f) {
     v8::String::Utf8Value raw(f->ToString());
     return std::string(*raw);
 }

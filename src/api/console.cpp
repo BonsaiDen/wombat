@@ -82,7 +82,7 @@ namespace Game { namespace api { namespace console {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
         setFunctionProp(object, "log", log);
     }
 

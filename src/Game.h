@@ -81,6 +81,7 @@ namespace Game {
         bool running;
         bool paused;
         bool reload;
+        bool fullReload;
         std::string main;
         bool error;
 
@@ -170,38 +171,38 @@ namespace Game {
         v8::Handle<v8::Value> require(const v8::Arguments& args);
 
         namespace console {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
         }
 
         namespace game {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
         }
 
         namespace keyboard {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
         }
 
         namespace mouse {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
         }
 
         namespace graphics {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
         }
 
         namespace image {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
             void shutdown();
         }
 
         namespace sound {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
             void update(double time, double dt);
             void shutdown();
         }
 
         namespace music {
-            void init(v8::Handle<v8::Object> object);
+            void init(const v8::Handle<v8::Object> &object);
             void update(double time, double dt);
             void shutdown();
         }
@@ -212,20 +213,20 @@ namespace Game {
     namespace io {
 
         namespace file {
-            ALLEGRO_FILE *open(std::string filename);
-            bool close(ALLEGRO_FILE *fp);
+            ALLEGRO_FILE *open(const std::string filename, void **rbuf);
+            bool close(ALLEGRO_FILE *fp, void **rbuf);
         }
 
         namespace image {
-            ALLEGRO_BITMAP *open(std::string filename);
+            ALLEGRO_BITMAP *open(const std::string filename);
         }
 
         namespace sample {
-            ALLEGRO_SAMPLE *open(std::string filename);
+            ALLEGRO_SAMPLE *open(const std::string filename);
         }
 
         namespace stream {
-            ALLEGRO_AUDIO_STREAM *open(std::string filename);
+            ALLEGRO_AUDIO_STREAM *open(const std::string filename);
         }
 
     }

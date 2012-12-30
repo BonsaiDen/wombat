@@ -32,16 +32,6 @@ namespace Game { namespace api { namespace sound {
     typedef std::map<const std::string, Sound*> SoundMap;
 
 
-    // Macros -----------------------------------------------------------------
-    #define mapSound(a, m) \
-        if (a.Length() > 0) { \
-            m = getSound(ToString(a[0])); \
-            if (!m->loaded) { \
-                m = NULL; \
-            } \
-        } \
-    
-
     // Loader -----------------------------------------------------------------
     SoundMap *sounds;
     Sound* getSound(std::string filename) {
@@ -61,6 +51,22 @@ namespace Game { namespace api { namespace sound {
         } else {
             return it->second;
         }
+
+    }
+
+    Sound *soundFromArg(const v8::Arguments& args) {
+
+        Sound *s = NULL;
+        if (args.Length() > 0) {
+
+            s = getSound(ToString(args[0]));
+            if (!s->loaded) {
+                s = NULL;
+            }
+
+        }
+
+        return s;
 
     }
 
@@ -111,8 +117,7 @@ namespace Game { namespace api { namespace sound {
     // API --------------------------------------------------------------------
     v8::Handle<v8::Value> load(const v8::Arguments& args) {
 
-        Sound *sound;
-        mapSound(args, sound);
+        Sound *sound = soundFromArg(args);
         if (sound) {
             return v8::True();
         } 
@@ -123,9 +128,7 @@ namespace Game { namespace api { namespace sound {
 
     v8::Handle<v8::Value> play(const v8::Arguments& args) {
 
-        Sound *sound;
-        mapSound(args, sound);
-
+        Sound *sound = soundFromArg(args);
         if (sound && sound->loaded) {
 
             ALLEGRO_SAMPLE_INSTANCE *instance = getInstanceForSample(sound);
@@ -170,7 +173,7 @@ namespace Game { namespace api { namespace sound {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         sounds = new SoundMap();
 

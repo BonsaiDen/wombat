@@ -139,7 +139,7 @@ namespace Game { namespace api { namespace keyboard {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         for(unsigned int i = 1; i < 227; i++) {
             setNumberProp(object, names[i], i);

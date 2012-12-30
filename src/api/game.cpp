@@ -55,8 +55,17 @@ namespace Game { namespace api { namespace game {
     }
 
     v8::Handle<v8::Value> reload(const v8::Arguments& args) {
-        state.reload = true;
+
+        if (args.Length() > 0 && args[0]->BooleanValue() == true) {
+            state.fullReload = true;
+            state.running = false;
+            
+        } else {
+            state.reload = true;
+        }
+
         return v8::Undefined();
+
     }
 
     v8::Handle<v8::Value> quit(const v8::Arguments& args) {
@@ -70,7 +79,7 @@ namespace Game { namespace api { namespace game {
     }
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         setFunctionProp(object, "getTime", getTime);
         setFunctionProp(object, "getDelta", getDelta);

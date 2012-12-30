@@ -21,17 +21,18 @@
 
 namespace Game { namespace io { namespace sample {
 
-    ALLEGRO_SAMPLE *open(std::string filename) {
+    ALLEGRO_SAMPLE *open(const std::string filename) {
 
         debugArgs("io::sample", "Loading '%s'...", filename.data());
 
+        void *rbuf;
+        ALLEGRO_FILE *fp  = file::open(filename, &rbuf);
         ALLEGRO_SAMPLE *sample = NULL;
-        ALLEGRO_FILE *fp  = file::open(filename);
 
         if (fp != NULL) {
             std::string ext = filename.substr(filename.find_last_of("."));
             sample = al_load_sample_f(fp, ext.data());
-            file::close(fp);
+            file::close(fp, &rbuf);
         } 
         
         if (sample) {

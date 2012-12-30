@@ -127,7 +127,7 @@ namespace Game { namespace api { namespace mouse {
 
 
     // Export -----------------------------------------------------------------
-    void init(v8::Handle<v8::Object> object) {
+    void init(const v8::Handle<v8::Object> &object) {
 
         setNumberProp(object, "CURSOR_NONE", ALLEGRO_SYSTEM_MOUSE_CURSOR_NONE);
         setNumberProp(object, "CURSOR_DEFAULT", ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT);

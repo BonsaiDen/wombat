@@ -41,7 +41,7 @@ v8::Handle<v8::Value> requireScript(const v8::Arguments& args) {
 
 }
 
-v8::Handle<v8::Value> executeScript(v8::Handle<v8::Script> script) {
+v8::Handle<v8::Value> executeScript(const v8::Handle<v8::Script> &script) {
 
     v8::HandleScope scope;
     v8::TryCatch tryCatch;
@@ -106,7 +106,7 @@ v8::Handle<v8::Script> loadScript(const char *name) {
 
 }
 
-void handleException(v8::TryCatch tryCatch) {
+void handleException(const v8::TryCatch &tryCatch) {
 
     v8::HandleScope scope;
     v8::String::Utf8Value exception(tryCatch.Exception());

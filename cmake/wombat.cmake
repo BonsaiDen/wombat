@@ -3,7 +3,7 @@ set(IO src/api/console.cpp src/api/game.cpp src/api/keyboard.cpp src/api/mouse.c
 set(CORE src/Game.cpp src/js.cpp)
 
 ADD_DEFINITIONS(-g -Wall -W -Wpointer-arith -Wcast-qual -ggdb)
-add_executable(wombat main.cpp ${CORE} ${API} ${IO})
+add_executable(wombat src/main.cpp ${CORE} ${API} ${IO})
 
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/res)
 target_link_libraries(wombat v8 allegro allegro_memfile allegro_primitives allegro_image allegro_audio allegro_acodec)
